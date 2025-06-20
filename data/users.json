@@ -1,0 +1,91 @@
+[
+    {
+      "userId": "admin",
+      "password": "admin123",
+      "name": "System Admin",
+      "contactInfo": "admin@univ.edu",
+      "userType": 0,
+      "role": "System Admin",
+      "permissionLevel": 10
+    },
+    {
+      "userId": "t001",
+      "password": "pw",
+      "name": "Bob",
+      "contactInfo": "Bob@univ.edu",
+      "userType": 1,
+      "department": "CS",
+      "title": "Professor",
+      "teachingCourses": ["C101", "C102"]
+    },
+    {
+      "userId": "t002",
+      "password": "pw",
+      "name": "Charlie",
+      "contactInfo": "Charlie@univ.edu",
+      "userType": 1,
+      "department": "Math",
+      "title": "Professor",
+      "teachingCourses": ["C103", "C104"]
+    },
+    {
+      "userId": "s001",
+      "password": "pw",
+      "name": "Alice",
+      "contactInfo": "Alice@univ.edu",
+      "userType": 2,
+      "gender": "Female",
+      "age": 20,
+      "department": "CS",
+      "className": "CS-2023",
+      "enrolledCourses": ["C101", "C103"]
+    },
+    {
+      "userId": "s002",
+      "password": "pw",
+      "name": "David",
+      "contactInfo": "David@univ.edu",
+      "userType": 2,
+      "gender": "Male",
+      "age": 21,
+      "department": "Math",
+      "className": "MA-2022",
+      "enrolledCourses": ["C102", "C104"]
+    },
+    {
+      "userId": "s003",
+      "password": "pw",
+      "name": "Eve",
+      "contactInfo": "Eve@univ.edu",
+      "userType": 2,
+      "gender": "Female",
+      "age": 19,
+      "department": "Physics",
+      "className": "PH-2023",
+      "enrolledCourses": ["C101", "C104"]
+    },
+    {
+      "userId": "s004",
+      "password": "pw",
+      "name": "Frank",
+      "contactInfo": "Frank@univ.edu",
+      "userType": 2,
+      "gender": "Male",
+      "age": 22,
+      "department": "CS",
+      "className": "CS-2023",
+      "enrolledCourses": ["C102", "C103"]
+    },
+    {
+      "userId": "s005",
+      "password": "pw",
+      "name": "Grace",
+      "contactInfo": "Grace@univ.edu",
+      "userType": 2,
+      "gender": "Female",
+      "age": 20,
+      "department": "Math",
+      "className": "MA-2022",
+      "enrolledCourses": ["C101", "C104"]
+    }
+  ] 

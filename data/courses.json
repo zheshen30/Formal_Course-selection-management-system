@@ -1,0 +1,46 @@
+[
+    {
+      "courseId": "C101",
+      "courseName": "Programming",
+      "courseType": "Required",
+      "totalHours": 48,
+      "credits": 4.0,
+      "semester": "Fall 2023",
+      "capacity": 30,
+      "teacherId": "t001",
+      "enrolledStudents": ["s001", "s003", "s005"]
+    },
+    {
+      "courseId": "C102",
+      "courseName": "Calculus",
+      "courseType": "Required",
+      "totalHours": 48,
+      "credits": 4.0,
+      "semester": "Fall 2023",
+      "capacity": 30,
+      "teacherId": "t001",
+      "enrolledStudents": ["s002", "s004"]
+    },
+    {
+      "courseId": "C103",
+      "courseName": "Physics",
+      "courseType": "Required",
+      "totalHours": 48,
+      "credits": 4.0,
+      "semester": "Fall 2023",
+      "capacity": 30,
+      "teacherId": "t002",
+      "enrolledStudents": ["s001", "s004"]
+    },
+    {
+      "courseId": "C104",
+      "courseName": "Chemistry",
+      "courseType": "Required",
+      "totalHours": 48,
+      "credits": 4.0,
+      "semester": "Fall 2023",
+      "capacity": 30,
+      "teacherId": "t002",
+      "enrolledStudents": ["s002", "s003", "s005"]
+    }
+  ] 
