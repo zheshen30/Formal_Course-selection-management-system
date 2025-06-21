@@ -543,7 +543,38 @@ end
 2. **目录结构**
 
    ```
-   待定
+   project/
+├── CMakeLists.txt          # 项目构建配置
+├── build_script.sh         # 构建脚本
+├── include/                # 头文件目录
+│   ├── model/              # 数据模型
+│   ├── manager/            # 管理器类
+│   ├── system/             # 系统类
+│   └── util/               # 工具类
+├── src/                    # 源文件目录
+│   ├── model/              # 数据模型实现
+│   ├── manager/            # 管理器类实现
+│   ├── system/             # 系统类实现
+│   ├── util/               # 工具类实现
+│   └── main.cpp            # 主函数
+├── data/                   # 数据文件目录
+│   ├── Chinese.json        # 中文语言文件
+│   ├── English.json        # 英文语言文件
+│   ├── users.json          # 用户数据
+│   ├── courses.json        # 课程数据
+│   └── enrollment.json     # 选课数据
+├── log/                    # 日志文件目录
+│   ├── info.log            # 信息日志
+│   ├── warn.log            # 警告日志
+│   └── error.log           # 错误日志
+├── tests/                  # 测试目录
+│   ├── unit/               # 单元测试
+│   └── integration/        # 集成测试
+└── docs/                   # 文档目录
+ ├── api.md                 # API文档
+ ├── view_class.md          # 类视图文档
+ ├── system_arch.md         # 系统架构文档
+ └── require.md             # 需求分析文档
    ```
 
 ## 未来扩展计划
