@@ -1,0 +1,35 @@
+[
+  {
+    "id": "CS101",
+    "name": "计算机导论",
+    "type": "REQUIRED",
+    "credit": 3.0,
+    "hours": 48,
+    "semester": "2023-2024-1",
+    "teacherId": "teacher001",
+    "maxCapacity": 50,
+    "enrolledStudents": []
+  },
+  {
+    "id": "CS102",
+    "name": "数据结构",
+    "type": "REQUIRED",
+    "credit": 4.0,
+    "hours": 64,
+    "semester": "2023-2024-1",
+    "teacherId": "teacher001",
+    "maxCapacity": 40,
+    "enrolledStudents": []
+  },
+  {
+    "id": "CS201",
+    "name": "面向对象程序设计",
+    "type": "ELECTIVE",
+    "credit": 3.5,
+    "hours": 56,
+    "semester": "2023-2024-1",
+    "teacherId": "teacher001",
+    "maxCapacity": 30,
+    "enrolledStudents": []
+  }
+]

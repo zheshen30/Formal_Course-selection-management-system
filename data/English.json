@@ -1,0 +1,49 @@
+{
+  "main_menu_title": "Main Menu",
+  "admin_menu_title": "Administrator Menu",
+  "teacher_menu_title": "Teacher Menu",
+  "student_menu_title": "Student Menu",
+
+  "login": "Login",
+  "logout": "Logout",
+  "exit": "Exit",
+
+  "enter_user_id": "Please enter user ID",
+  "enter_password": "Please enter password",
+  "login_success": "Login successful",
+  "login_failed": "Login failed, incorrect user ID or password",
+
+  "invalid_input": "Invalid input, please try again",
+
+  "user_management": "User Management",
+  "course_management": "Course Management",
+  "enrollment_query": "Enrollment Query",
+
+  "view_courses": "View Courses",
+  "view_students": "View Students",
+
+  "query_courses": "Query Courses",
+  "select_course": "Select Course",
+  "drop_course": "Drop Course",
+  "view_selected_courses": "View Selected Courses",
+
+  "user_management_function": "User Management Function",
+  "course_management_function": "Course Management Function",
+  "enrollment_query_function": "Enrollment Query Function",
+
+  "view_courses_function": "View Courses Function",
+  "view_students_function": "View Students Function",
+
+  "query_courses_function": "Query Courses Function",
+  "select_course_function": "Select Course Function",
+  "drop_course_function": "Drop Course Function",
+  "view_selected_courses_function": "View Selected Courses Function",
+
+  "system_error": "System Error",
+
+  "save_success": "Save Successful",
+  "save_failed": "Save Failed",
+  
+  "operation_success": "Operation Successful",
+  "operation_failed": "Operation Failed"
+}
