@@ -19,11 +19,7 @@
 #include <string>
 #include <memory>
 #include <mutex>
-
-// 前置声明spdlog相关类
-namespace spdlog {
-    class logger;
-}
+#include <fstream>
 
 /**
  * @brief 日志级别枚举
@@ -126,7 +122,12 @@ private:
      */
     ~Logger();
     
-    bool initialized_ = false;              ///< 是否已初始化
-    std::shared_ptr<spdlog::logger> logger_; ///< spdlog日志器
-    std::mutex mutex_;                      ///< 互斥锁
+    bool initialized_ = false;    ///< 是否已初始化
+    LogLevel logLevel_;           ///< 日志级别
+    std::mutex mutex_;            ///< 互斥锁
+    
+    // 日志文件流
+    std::ofstream infoFile_;      ///< 信息日志文件流
+    std::ofstream warnFile_;      ///< 警告日志文件流
+    std::ofstream errorFile_;     ///< 错误日志文件流
 }; 

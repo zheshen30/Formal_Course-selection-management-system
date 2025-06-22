@@ -114,11 +114,43 @@ private:
     bool loadLanguageFile(Language language);
     
     /**
+     * @brief 创建默认语言文件
+     * @param language 语言枚举
+     * @return 是否创建成功
+     */
+    bool createDefaultLanguageFile(Language language);
+    
+    /**
      * @brief 获取语言文件路径
      * @param language 语言枚举
      * @return 文件路径
      */
     std::string getLanguageFilePath(Language language) const;
+    
+    /**
+     * @brief 将单个值转换为字符串
+     * @param value 要转换的值
+     * @return 转换后的字符串
+     */
+    template<typename T>
+    std::string formatValue(const T& value) const;
+    
+    /**
+     * @brief 递归终止条件的格式化函数
+     * @param format 格式字符串
+     * @return 原始格式字符串
+     */
+    std::string formatString(const std::string& format) const;
+    
+    /**
+     * @brief 递归格式化函数，替换占位符
+     * @param format 格式字符串
+     * @param value 当前参数值
+     * @param args 剩余参数
+     * @return 格式化后的字符串
+     */
+    template<typename T, typename... Args>
+    std::string formatString(const std::string& format, T value, Args... args) const;
 
     std::string dataDir_; ///< 数据目录
     Language currentLanguage_ = Language::CHINESE; ///< 当前语言

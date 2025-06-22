@@ -22,30 +22,29 @@ LockGuard::LockGuard(std::mutex& mutex, unsigned long timeout)
     
     if (timeout == 0) {
         // 无超时，直接尝试获取锁
-        mutex_.lock();
-        locked_ = true;
-    } else {
-        // 有超时，使用try_lock_for尝试获取锁
-        auto timeoutDuration = std::chrono::milliseconds(timeout);
-        
-        // 首先尝试无限期地获取锁
-        if (mutex_.try_lock()) {
+        try {
+            mutex_.lock();
             locked_ = true;
-            return;
+        } catch (const std::exception& e) {
+            std::cerr << "锁定失败: " << e.what() << std::endl;
+            throw SystemException(ErrorType::LOCK_FAILURE, "获取锁失败: " + std::string(e.what()));
         }
-        
-        // 如果无法立即获取，等待指定的时间
+    } else {
+        // 有超时，实现一个简单的超时逻辑
         auto start = std::chrono::steady_clock::now();
-        while (std::chrono::steady_clock::now() - start < timeoutDuration) {
+        auto end = start + std::chrono::milliseconds(timeout);
+        
+        // 先尝试一次立即加锁
+        locked_ = mutex_.try_lock();
+        
+        // 如果失败，则进行多次尝试，直到超时
+        while (!locked_ && std::chrono::steady_clock::now() < end) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            if (mutex_.try_lock()) {
-                locked_ = true;
-                return;
-            }
+            locked_ = mutex_.try_lock();
         }
         
-        // 超时，无法获取锁
         if (!locked_) {
+            std::cerr << "获取锁超时" << std::endl;
             throw SystemException(ErrorType::LOCK_TIMEOUT, "获取锁超时");
         }
     }

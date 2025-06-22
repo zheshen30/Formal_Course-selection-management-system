@@ -22,6 +22,7 @@
 #include <fstream>
 #include <filesystem>
 #include <stdexcept>
+#include <iostream>
 
 namespace fs = std::filesystem;
 
@@ -36,27 +37,45 @@ DataManager::DataManager() {
 }
 
 std::string DataManager::loadJsonFromFile(const std::string& filename) {
-    LockGuard lock(mutex_, 5000);
-    if (!lock.isLocked()) {
-        throw SystemException(ErrorType::LOCK_TIMEOUT, "获取数据管理器锁超时");
-    }
-    
+    // 先不加锁，检查文件是否存在
     std::string filePath = getDataFilePath(filename);
-    
+    std::cout << "尝试从文件加载JSON: " << filePath << std::endl;
+
+    // 先检查文件是否存在（不需要加锁）
     if (!fileExists(filePath)) {
         Logger::getInstance().warning("文件不存在: " + filePath);
+        std::cout << "警告: 文件不存在: " << filePath << std::endl;
         return "";
     }
     
     try {
-        std::ifstream file(filePath);
-        if (!file.is_open()) {
-            Logger::getInstance().error("无法打开文件: " + filePath);
-            throw SystemException(ErrorType::FILE_ACCESS_DENIED, "无法打开文件: " + filePath);
-        }
+        // 只在读取文件时短暂加锁
+        std::string jsonContent;
+        {
+            // 使用更短的作用域加锁
+            LockGuard lock(mutex_, 1000); // 减少超时时间
+            if (!lock.isLocked()) {
+                std::cout << "警告: 获取数据管理器锁超时，尝试无锁读取" << std::endl;
+                // 如果锁失败，尝试直接读取
+            }
+            
+            std::ifstream file(filePath);
+            if (!file.is_open()) {
+                Logger::getInstance().error("无法打开文件: " + filePath);
+                std::cout << "错误: 无法打开文件: " << filePath << std::endl;
+                throw SystemException(ErrorType::FILE_ACCESS_DENIED, "无法打开文件: " + filePath);
+            }
+            
+            jsonContent = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+            file.close();
+        } // 锁在这里释放
         
-        std::string jsonContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-        file.close();
+        std::cout << "文件读取成功，内容大小: " << jsonContent.size() << " 字节" << std::endl;
+        if(jsonContent.size() > 100) {
+            std::cout << "前100个字符: " << jsonContent.substr(0, 100) << "..." << std::endl;
+        } else {
+            std::cout << "全部内容: " << jsonContent << std::endl;
+        }
         
         Logger::getInstance().info("成功加载文件: " + filePath);
         return jsonContent;
@@ -64,6 +83,7 @@ std::string DataManager::loadJsonFromFile(const std::string& filename) {
         throw; // 重新抛出系统异常
     } catch (const std::exception& e) {
         Logger::getInstance().error("加载文件失败: " + filePath + " - " + e.what());
+        std::cout << "错误: 加载文件失败: " << filePath << " - " << e.what() << std::endl;
         throw SystemException(ErrorType::FILE_CORRUPTED, std::string("加载文件失败: ") + e.what());
     }
 }

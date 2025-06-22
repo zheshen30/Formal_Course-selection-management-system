@@ -34,13 +34,10 @@
 #include <iostream>
 #include <stdexcept>
 #include <filesystem>
+#include <iomanip>
 
-// 第三方库头文件 - 这些通常是最大且编译最慢的
+// 第三方库头文件
 #include <json.hpp>
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/rotating_file_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 
 // OpenSSL库头文件 - 根据CMake配置有条件地包含
 #ifndef NO_OPENSSL

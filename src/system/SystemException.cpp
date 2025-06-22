@@ -65,6 +65,8 @@ std::string SystemException::errorTypeToString(ErrorType type) {
         // 并发错误
         case ErrorType::LOCK_TIMEOUT:
             return "锁定超时";
+        case ErrorType::LOCK_FAILURE:
+            return "锁定失败";
         case ErrorType::CONCURRENT_MODIFICATION:
             return "并发修改冲突";
 

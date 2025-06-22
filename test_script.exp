@@ -1,0 +1,51 @@
+#!/usr/bin/expect -f
+
+# 设置超时时间
+set timeout 10
+
+# 启动程序
+spawn ./course_system
+
+# 等待语言选择提示
+expect "请选择语言 / Please select language:"
+send "1\r"
+
+# 等待主菜单
+expect "主菜单"
+expect "1. 登录"
+expect "2. 退出"
+send "1\r"
+
+# 等待登录提示
+expect "请输入用户ID"
+send "teacher001\r"
+
+expect "请输入密码"
+send "password\r"
+
+# 等待登录结果
+expect {
+    "登录成功" {
+        puts "\n教师登录成功，测试通过！"
+    }
+    "登录失败" {
+        puts "\n教师登录失败，测试未通过！"
+        exit 1
+    }
+    timeout {
+        puts "\n登录超时，测试未通过！"
+        exit 1
+    }
+}
+
+# 等待教师菜单
+expect "教师菜单"
+
+# 选择退出
+send "4\r"
+
+# 等待退出确认
+expect "退出系统"
+
+# 程序结束
+expect eof

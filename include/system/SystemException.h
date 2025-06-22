@@ -44,6 +44,7 @@ enum class ErrorType {
 
     // 并发错误
     LOCK_TIMEOUT,           ///< 锁定超时
+    LOCK_FAILURE,           ///< 锁定失败
     CONCURRENT_MODIFICATION, ///< 并发修改冲突
     
     // 其他错误

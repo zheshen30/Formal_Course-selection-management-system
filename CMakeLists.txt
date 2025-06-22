@@ -44,14 +44,11 @@ else()
 endif()
 
 # 添加本地依赖库路径
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/nlohmann/cmake" "${CMAKE_SOURCE_DIR}/spdlog/cmake")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/nlohmann/cmake")
 set(JSON_BuildTests OFF CACHE INTERNAL "")
-set(SPDLOG_BUILD_EXAMPLES OFF CACHE INTERNAL "")
-set(SPDLOG_BUILD_TESTS OFF CACHE INTERNAL "")
 
 # 添加子目录
 # nlohmann/json是仅头文件的库，不需要add_subdirectory
-add_subdirectory(spdlog)
 
 # 设置OpenSSL路径 - 作为查找提示而非直接指定
 set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/dependlib/openssl")
@@ -132,8 +129,6 @@ endif()
 
 # 查找必要的依赖库
 find_package(Threads REQUIRED)
-# 使用spdlog内置的fmt库，不再单独查找fmt
-# find_package(fmt REQUIRED)
 
 # 设置源文件
 file(GLOB_RECURSE SOURCES 
@@ -197,7 +192,6 @@ endif()
 target_include_directories(course_system PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/nlohmann
-    ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include
     ${OPENSSL_INCLUDE_DIR}
 )
 
@@ -208,7 +202,6 @@ if(OPENSSL_FOUND)
             OpenSSL::SSL
             OpenSSL::Crypto
             Threads::Threads
-            spdlog
         )
     else()
         # 手动配置的情况
@@ -216,7 +209,6 @@ if(OPENSSL_FOUND)
         target_link_libraries(course_system PRIVATE
             ${OPENSSL_LIBRARIES}
             Threads::Threads
-            spdlog
         )
     endif()
     
@@ -228,7 +220,6 @@ else()
     # 链接其他库，但不包括OpenSSL
     target_link_libraries(course_system PRIVATE
         Threads::Threads
-        spdlog
     )
     
     # 添加宏定义以禁用OpenSSL相关功能
@@ -248,11 +239,9 @@ endif()
 add_custom_target(copy_data_files ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_SOURCE_DIR}/data
-    ${CMAKE_BINARY_DIR}/data
+    ${CMAKE_CURRENT_BINARY_DIR}/data
+    COMMENT "Copying data files to build directory"
 )
-
-# 确保数据文件在可执行文件生成前复制
-add_dependencies(course_system copy_data_files)
 
 # 显示项目信息
 message(STATUS "Project: ${PROJECT_NAME}")
