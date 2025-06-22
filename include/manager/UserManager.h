@@ -144,6 +144,15 @@ public:
     bool hasUser(const std::string& userId) const;
 
     /**
+     * @brief 修改用户密码
+     * @param userId 用户ID
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     * @return 是否修改成功
+     */
+    bool changeUserPassword(const std::string& userId, const std::string& oldPassword, const std::string& newPassword);
+
+    /**
      * @brief 查找用户
      * @param predicate 过滤谓词
      * @return 符合条件的用户ID列表

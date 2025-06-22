@@ -738,6 +738,38 @@ void CourseSystem::handleStudentFunctions(int choice) {
     }
 }
 
+bool CourseSystem::changePassword(const std::string& userId, const std::string& oldPassword,
+                                 const std::string& newPassword, const std::string& confirmPassword) {
+    try {
+        // 检查新密码与确认密码是否一致
+        if (newPassword != confirmPassword) {
+            Logger::getInstance().warning("用户 " + userId + " 修改密码失败：新密码与确认密码不一致");
+            return false;
+        }
+        
+        // 密码有效性检查 - 密码长度必须大于等于6位
+        if (newPassword.length() < 6) {
+            Logger::getInstance().warning("用户 " + userId + " 修改密码失败：新密码长度不足6位");
+            return false;
+        }
+        
+        // 调用UserManager修改密码
+        bool result = UserManager::getInstance().changeUserPassword(userId, oldPassword, newPassword);
+        
+        if (result) {
+            Logger::getInstance().info("用户 " + userId + " 密码修改成功");
+        }
+        
+        return result;
+    } catch (const std::exception& e) {
+        Logger::getInstance().error("修改密码出现异常: " + std::string(e.what()));
+        return false;
+    } catch (...) {
+        Logger::getInstance().error("修改密码出现未知异常");
+        return false;
+    }
+}
+
 // 显式实例化常用的模板函数，解决链接错误
 template std::string CourseSystem::getFormattedText(const std::string& key, int) const;
 template std::string CourseSystem::getFormattedText(const std::string& key, const std::string&) const;

@@ -18,14 +18,25 @@
 #include "../../include/system/CourseSystem.h"
 #include "../../include/system/LockGuard.h"
 #include "../../include/system/SystemException.h"
+#include <filesystem>
 
 // CourseSystem类的测试fixture
 class SystemTest : public ::testing::Test {
 protected:
     void SetUp() override {
+        // 创建测试目录
+        try {
+            std::filesystem::create_directories("../test_data");
+            std::filesystem::create_directories("../test_log");
+            std::filesystem::create_directories("../test_data2");
+            std::filesystem::create_directories("../test_log2");
+        } catch (const std::exception& e) {
+            std::cerr << "创建测试目录异常: " << e.what() << std::endl;
+        }
+        
         // 设置测试环境
         system = &CourseSystem::getInstance();
-        system->initialize("./test_data", "./test_log");
+        system->initialize("../test_data", "../test_log");
     }
 
     void TearDown() override {
@@ -40,8 +51,8 @@ protected:
 TEST_F(SystemTest, InitializeAndShutdown) {
     CourseSystem& testSystem = CourseSystem::getInstance();
     
-    // 测试初始化
-    EXPECT_TRUE(testSystem.initialize("./test_data2", "./test_log2"));
+    // 测试初始化 - 使用项目根目录下的测试数据和日志目录
+    EXPECT_TRUE(testSystem.initialize("../test_data2", "../test_log2"));
     
     // 测试关闭
     testSystem.shutdown();
@@ -175,6 +186,61 @@ TEST_F(SystemTest, SystemExceptionTest) {
         EXPECT_STREQ("权限不足", e.what());
         EXPECT_EQ(403, e.getErrorCode());
     }
+}
+
+// 测试密码修改功能
+TEST_F(SystemTest, PasswordChangeTest) {
+    // 创建测试用户
+    UserManager& userManager = UserManager::getInstance();
+    std::unique_ptr<Student> student = std::make_unique<Student>(
+        "password_test", "密码测试用户", "initial_password",
+        "男", 20, "计算机科学", "计算机1班", "password_test@example.com"
+    );
+    EXPECT_TRUE(userManager.addStudent(std::move(student)));
+    
+    // 场景1：新密码与确认密码不一致
+    EXPECT_FALSE(system->changePassword(
+        "password_test", "initial_password", "new_password", "different_password"));
+    
+    // 验证密码未被修改
+    User* user = userManager.getUser("password_test");
+    ASSERT_NE(nullptr, user);
+    EXPECT_TRUE(user->verifyPassword("initial_password"));
+    
+    // 场景2：密码过短（少于6位）
+    EXPECT_FALSE(system->changePassword(
+        "password_test", "initial_password", "short", "short"));
+    
+    // 验证密码未被修改
+    user = userManager.getUser("password_test");
+    ASSERT_NE(nullptr, user);
+    EXPECT_TRUE(user->verifyPassword("initial_password"));
+    
+    // 场景3：旧密码错误
+    EXPECT_FALSE(system->changePassword(
+        "password_test", "wrong_password", "new_password123", "new_password123"));
+    
+    // 验证密码未被修改
+    user = userManager.getUser("password_test");
+    ASSERT_NE(nullptr, user);
+    EXPECT_TRUE(user->verifyPassword("initial_password"));
+    
+    // 场景4：密码修改成功
+    EXPECT_TRUE(system->changePassword(
+        "password_test", "initial_password", "new_password123", "new_password123"));
+    
+    // 验证密码已被修改
+    user = userManager.getUser("password_test");
+    ASSERT_NE(nullptr, user);
+    EXPECT_TRUE(user->verifyPassword("new_password123"));
+    EXPECT_FALSE(user->verifyPassword("initial_password"));
+    
+    // 场景5：不存在的用户
+    EXPECT_FALSE(system->changePassword(
+        "nonexistent_user", "any_password", "new_password123", "new_password123"));
+    
+    // 清理测试数据
+    userManager.removeUser("password_test");
 }
 
 int main(int argc, char **argv) {

@@ -116,6 +116,17 @@ public:
     std::string getFormattedText(const std::string& key, Args... args) const;
 
     /**
+     * @brief 修改用户密码
+     * @param userId 用户ID
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     * @param confirmPassword 确认密码
+     * @return 是否修改成功
+     */
+    bool changePassword(const std::string& userId, const std::string& oldPassword,
+                        const std::string& newPassword, const std::string& confirmPassword);
+
+    /**
      * @brief 记录日志
      * @param level 日志级别
      * @param message 日志消息

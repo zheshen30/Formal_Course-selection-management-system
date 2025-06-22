@@ -124,6 +124,38 @@ TEST_F(UserTest, MoveOperations) {
     EXPECT_EQ(22, student4.getAge());
 }
 
+// 测试密码修改功能
+TEST_F(UserTest, PasswordChangeTest) {
+    Student student("test001", "密码测试", "oldpassword",
+                   "男", 20, "计算机科学", "计算机2班", "test@example.com");
+    
+    // 验证原始密码
+    EXPECT_TRUE(student.verifyPassword("oldpassword"));
+    EXPECT_FALSE(student.verifyPassword("newpassword"));
+    
+    // 修改密码
+    student.setPassword("newpassword");
+    
+    // 验证新密码
+    EXPECT_TRUE(student.verifyPassword("newpassword"));
+    EXPECT_FALSE(student.verifyPassword("oldpassword"));
+    
+    // 验证盐值已更新
+    std::string originalSalt = student.salt_;
+    EXPECT_FALSE(originalSalt.empty());
+    
+    // 再次修改密码
+    student.setPassword("anotherpassword");
+    
+    // 验证密码和盐值
+    EXPECT_TRUE(student.verifyPassword("anotherpassword"));
+    EXPECT_FALSE(student.verifyPassword("newpassword"));
+    EXPECT_FALSE(student.verifyPassword("oldpassword"));
+    
+    // 验证盐值已再次更新（盐值应该发生变化）
+    EXPECT_NE(originalSalt, student.salt_);
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

@@ -53,6 +53,14 @@ User* authenticate(const std::string& userId, const std::string& password);
 
 验证用户身份，认证成功返回用户指针，失败返回nullptr。
 
+#### 密码管理
+
+```cpp
+bool changeUserPassword(const std::string& userId, const std::string& oldPassword, const std::string& newPassword);
+```
+
+修改用户密码，需要提供正确的旧密码，修改成功返回true，失败返回false。密码将使用盐值加密存储。
+
 #### 用户查询
 
 ```cpp
@@ -195,6 +203,16 @@ bool checkPermission(UserType requiredUserType) const;
 ```
 
 用户登录、注销、获取当前用户和权限检查。
+
+#### 密码管理
+
+```cpp
+bool changePassword(const std::string& userId, const std::string& oldPassword, 
+                    const std::string& newPassword, const std::string& confirmPassword);
+```
+
+修改用户密码，需要提供正确的旧密码，并确保新密码和确认密码一致。密码长度需要至少6位。
+修改成功返回true，失败返回false。密码将使用盐值加密存储，确保安全性。
 
 #### 国际化支持
 

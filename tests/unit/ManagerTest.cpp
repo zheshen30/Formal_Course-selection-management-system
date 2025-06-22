@@ -20,13 +20,21 @@
 #include "../../include/manager/CourseManager.h"
 #include "../../include/manager/EnrollmentManager.h"
 #include "../../include/util/DataManager.h"
+#include <filesystem>
 
 // Manager类的测试fixture
 class ManagerTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        // 设置测试环境
-        DataManager::getInstance().setDataDirectory("./test_data");
+        // 创建测试目录
+        try {
+            std::filesystem::create_directories("../test_data");
+        } catch (const std::exception& e) {
+            std::cerr << "创建测试目录异常: " << e.what() << std::endl;
+        }
+        
+        // 设置测试环境 - 使用项目根目录下的测试数据
+        DataManager::getInstance().setDataDirectory("../test_data");
     }
 
     void TearDown() override {
@@ -201,6 +209,47 @@ TEST_F(ManagerTest, ManagerQueryFunctions) {
     userManager.removeUser("student002");
     courseManager.removeCourse("CS101");
     courseManager.removeCourse("CS102");
+}
+
+// 测试UserManager的密码修改功能
+TEST_F(ManagerTest, UserManagerPasswordChange) {
+    UserManager& userManager = UserManager::getInstance();
+    
+    // 创建测试用户
+    std::unique_ptr<Student> student = std::make_unique<Student>(
+        "pw_test_student", "密码测试学生", "initial_password",
+        "男", 20, "计算机科学", "计算机1班", "pw_test@example.com"
+    );
+    
+    // 添加用户
+    EXPECT_TRUE(userManager.addStudent(std::move(student)));
+    
+    // 使用错误的旧密码尝试修改密码
+    EXPECT_FALSE(userManager.changeUserPassword(
+        "pw_test_student", "wrong_old_password", "new_password"));
+    
+    // 确认密码未被修改
+    User* user = userManager.getUser("pw_test_student");
+    ASSERT_NE(nullptr, user);
+    EXPECT_TRUE(user->verifyPassword("initial_password"));
+    EXPECT_FALSE(user->verifyPassword("new_password"));
+    
+    // 使用正确的旧密码修改密码
+    EXPECT_TRUE(userManager.changeUserPassword(
+        "pw_test_student", "initial_password", "new_password"));
+    
+    // 确认密码已被修改
+    user = userManager.getUser("pw_test_student");
+    ASSERT_NE(nullptr, user);
+    EXPECT_FALSE(user->verifyPassword("initial_password"));
+    EXPECT_TRUE(user->verifyPassword("new_password"));
+    
+    // 尝试修改不存在用户的密码
+    EXPECT_FALSE(userManager.changeUserPassword(
+        "non_existent_user", "any_password", "new_password"));
+    
+    // 清理测试数据
+    userManager.removeUser("pw_test_student");
 }
 
 int main(int argc, char **argv) {

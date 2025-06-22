@@ -399,12 +399,40 @@ bool UserManager::updateUserInfo(const User& user) {
 }
 
 bool UserManager::hasUser(const std::string& userId) const {
-    LockGuard lock(mutex_, 5000); // 设置5秒超时
+    LockGuard lock(mutex_, 5000);
     if (!lock.isLocked()) {
         throw SystemException(ErrorType::LOCK_TIMEOUT, "获取用户管理器锁超时");
     }
     
     return users_.find(userId) != users_.end();
+}
+
+bool UserManager::changeUserPassword(const std::string& userId, const std::string& oldPassword, const std::string& newPassword) {
+    LockGuard lock(mutex_, 5000); // 设置5秒超时
+    if (!lock.isLocked()) {
+        throw SystemException(ErrorType::LOCK_TIMEOUT, "获取用户管理器锁超时");
+    }
+    
+    auto it = users_.find(userId);
+    if (it == users_.end()) {
+        Logger::getInstance().warning("修改密码失败：用户ID " + userId + " 不存在");
+        return false;
+    }
+    
+    User* user = it->second.get();
+    if (!user->verifyPassword(oldPassword)) {
+        Logger::getInstance().warning("修改密码失败：用户 " + userId + " 旧密码验证错误");
+        return false;
+    }
+    
+    // 设置新密码，内部会生成新的盐值和哈希
+    user->setPassword(newPassword);
+    
+    // 保存更改到文件
+    this->saveData();
+    
+    Logger::getInstance().info("用户 " + userId + " 密码修改成功");
+    return true;
 }
 
 std::vector<std::string> UserManager::findUsers(const std::function<bool(const User&)>& predicate) const {
