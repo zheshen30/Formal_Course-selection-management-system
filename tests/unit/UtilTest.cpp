@@ -28,16 +28,34 @@ class UtilTest : public ::testing::Test {
 protected:
     void SetUp() override {
         // 设置测试环境
-        testDir = "./test_util_data";
-        std::filesystem::create_directory(testDir);
+        testDir = "../test_data";
+        testLogDir = "../test_log";
+        
+        try {
+            std::filesystem::create_directories(testDir);
+            std::filesystem::create_directories(testLogDir);
+        } catch (const std::exception& e) {
+            std::cerr << "创建测试目录异常: " << e.what() << std::endl;
+        }
     }
 
     void TearDown() override {
         // 清理测试环境
-        std::filesystem::remove_all(testDir);
+        // 不删除目录，只删除测试中创建的文件
+        try {
+            for (const auto& entry : std::filesystem::directory_iterator(testDir)) {
+                if (entry.path().filename().string() != "Chinese.json" && 
+                    entry.path().filename().string() != "English.json") {
+                    std::filesystem::remove_all(entry.path());
+                }
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "清理测试目录异常: " << e.what() << std::endl;
+        }
     }
 
     std::string testDir;
+    std::string testLogDir;
 };
 
 // 测试DataManager类
@@ -57,7 +75,7 @@ TEST_F(UtilTest, DataManagerTest) {
     EXPECT_TRUE(std::filesystem::exists(newDir));
     
     // 测试保存和加载JSON
-    std::string testFile = testDir + "/test.json";
+    std::string testFile = testDir + "/test_util.json";
     std::string jsonData = R"({"test": "value", "number": 123})";
     EXPECT_TRUE(dataManager.saveJsonToFile(testFile, jsonData));
     EXPECT_TRUE(dataManager.fileExists(testFile));
@@ -75,8 +93,7 @@ TEST_F(UtilTest, LoggerTest) {
     Logger& logger = Logger::getInstance();
     
     // 初始化日志系统
-    std::string logDir = testDir + "/log";
-    EXPECT_TRUE(logger.initialize(logDir, LogLevel::INFO));
+    EXPECT_TRUE(logger.initialize(testLogDir, LogLevel::INFO));
     
     // 测试日志级别转换
     EXPECT_EQ("DEBUG", Logger::logLevelToString(LogLevel::DEBUG));
@@ -102,7 +119,7 @@ TEST_F(UtilTest, LoggerTest) {
     // 注意：这里只是测试API调用，实际日志内容需要检查日志文件
 }
 
-    // 测试I18nManager类
+// 测试I18nManager类
 TEST_F(UtilTest, I18nManagerTest) {
     I18nManager& i18n = I18nManager::getInstance();
     

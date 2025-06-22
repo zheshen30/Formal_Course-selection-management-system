@@ -33,7 +33,7 @@ protected:
             std::cerr << "创建测试目录异常: " << e.what() << std::endl;
         }
         
-        // 设置测试环境 - 使用项目根目录下的测试数据
+        // 设置测试环境 - 使用规定的测试数据目录
         DataManager::getInstance().setDataDirectory("../test_data");
     }
 

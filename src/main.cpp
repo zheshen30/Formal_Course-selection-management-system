@@ -23,80 +23,54 @@
 #include <thread>
 #include <chrono>
 
-// 尝试查找有效的数据目录 - 优先使用项目根目录的data文件夹
-std::string findValidDataDir() {
-    // 项目根目录下的data文件夹 - 按优先级排序
-    std::vector<std::string> potentialDirs = {
-        "../data",            // 相对于build目录，指向项目根目录的data
-        "../../data",         // 另一种可能的相对路径
-        "../proj_des_formal/data", // 特定项目目录
-        "./data"              // 如果程序直接在项目根目录运行
-    };
+// 获取主程序的数据目录：主目录下的data目录
+std::string getDataDir() {
+    // 主程序应该在build目录下运行，因此数据目录是../data（相对于build目录）
+    std::string dataDir = "../data";
     
-    for (const auto& dir : potentialDirs) {
-        std::cout << "检查数据目录: " << dir << std::endl;
-        
-        if (std::filesystem::exists(dir)) {
-            // 检查是否存在关键文件以确认是正确的数据目录
-            if (std::filesystem::exists(dir + "/Chinese.json") && 
-                std::filesystem::exists(dir + "/English.json")) {
-                std::cout << "找到有效的数据目录: " << dir << std::endl;
-                std::filesystem::path absolutePath = std::filesystem::absolute(dir);
-                std::cout << "数据目录绝对路径: " << absolutePath.string() << std::endl;
-                return absolutePath.string();
-            }
-        }
-    }
+    // 获取绝对路径
+    std::filesystem::path absolutePath = std::filesystem::absolute(dataDir);
+    std::cout << "数据目录绝对路径: " << absolutePath.string() << std::endl;
     
-    // 如果找不到，使用项目根目录下的data目录
-    std::string defaultDir = "../data"; // 相对于build目录的项目根目录
-    std::cout << "未找到有效的数据目录，将使用默认目录: " << defaultDir << std::endl;
-    
+    // 确保目录存在
     try {
-        std::filesystem::create_directories(defaultDir);
-        std::filesystem::path absolutePath = std::filesystem::absolute(defaultDir);
-        std::cout << "成功创建目录: " << absolutePath.string() << std::endl;
-        return absolutePath.string();
+        if (!std::filesystem::exists(absolutePath)) {
+            std::cout << "数据目录不存在，正在创建..." << std::endl;
+            std::filesystem::create_directories(absolutePath);
+        }
     } catch (const std::exception& e) {
-        std::cerr << "创建目录失败: " << e.what() << std::endl;
-        return defaultDir; // 仍然返回相对路径，尽管创建失败
+        std::cerr << "创建数据目录失败: " << e.what() << std::endl;
     }
+    
+    // 检查关键文件
+    if (!std::filesystem::exists(absolutePath / "Chinese.json") || 
+        !std::filesystem::exists(absolutePath / "English.json")) {
+        std::cout << "警告: 关键语言文件不存在，需要创建默认语言文件" << std::endl;
+    }
+    
+    return absolutePath.string();
 }
 
-// 查找或创建日志目录 - 优先使用项目根目录的log文件夹
-std::string findLogDir() {
-    // 项目根目录下的log文件夹 - 按优先级排序
-    std::vector<std::string> potentialDirs = {
-        "../log",            // 相对于build目录，指向项目根目录的log
-        "../../log",         // 另一种可能的相对路径
-        "../proj_des_formal/log", // 特定项目目录
-        "./log"              // 如果程序直接在项目根目录运行
-    };
+// 获取主程序的日志目录：主目录下的log目录
+std::string getLogDir() {
+    // 主程序应该在build目录下运行，因此日志目录是../log（相对于build目录）
+    std::string logDir = "../log";
     
-    for (const auto& dir : potentialDirs) {
-        std::cout << "检查日志目录: " << dir << std::endl;
-        
-        if (std::filesystem::exists(dir)) {
-            std::cout << "找到有效的日志目录: " << dir << std::endl;
-            std::filesystem::path absolutePath = std::filesystem::absolute(dir);
-            std::cout << "日志目录绝对路径: " << absolutePath.string() << std::endl;
-            return absolutePath.string();
-        }
-    }
+    // 获取绝对路径
+    std::filesystem::path absolutePath = std::filesystem::absolute(logDir);
+    std::cout << "日志目录绝对路径: " << absolutePath.string() << std::endl;
     
-    // 如果找不到，使用项目根目录下的log目录
-    std::string defaultDir = "../log"; // 相对于build目录的项目根目录
-    std::cout << "未找到有效的日志目录，将使用默认目录: " << defaultDir << std::endl;
-    
+    // 确保目录存在
     try {
-        std::filesystem::create_directories(defaultDir);
-        std::filesystem::path absolutePath = std::filesystem::absolute(defaultDir);
-        std::cout << "成功创建目录: " << absolutePath.string() << std::endl;
-        return absolutePath.string();
+        if (!std::filesystem::exists(absolutePath)) {
+            std::cout << "日志目录不存在，正在创建..." << std::endl;
+            std::filesystem::create_directories(absolutePath);
+        }
     } catch (const std::exception& e) {
         std::cerr << "创建日志目录失败: " << e.what() << std::endl;
-        return defaultDir; // 仍然返回相对路径，尽管创建失败
     }
+    
+    return absolutePath.string();
 }
 
 int main() {
@@ -107,24 +81,13 @@ int main() {
         std::cerr << "获取当前工作目录异常: " << e.what() << std::endl;
     }
     
-    // 查找有效的数据目录和日志目录
-    std::string dataDir = findValidDataDir();
-    std::string logDir = findLogDir();
+    // 获取数据目录和日志目录
+    std::string dataDir = getDataDir();
+    std::string logDir = getLogDir();
     
     // 显示选择的目录
     std::cout << "使用的数据目录: " << dataDir << std::endl;
     std::cout << "使用的日志目录: " << logDir << std::endl;
-    
-    // 确保目录存在
-    try {
-        std::filesystem::create_directories(dataDir);
-        std::cout << "确保数据目录存在: " << dataDir << std::endl;
-        
-        std::filesystem::create_directories(logDir);
-        std::cout << "确保日志目录存在: " << logDir << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "创建目录异常: " << e.what() << std::endl;
-    }
     
     // 检查关键文件
     try {

@@ -33,8 +33,6 @@ protected:
         try {
             std::filesystem::create_directories("../test_data");
             std::filesystem::create_directories("../test_log");
-            std::filesystem::create_directories("../test_data2");
-            std::filesystem::create_directories("../test_log2");
         } catch (const std::exception& e) {
             std::cerr << "创建测试目录异常: " << e.what() << std::endl;
         }
@@ -89,8 +87,8 @@ protected:
 TEST_F(SystemTest, InitializeAndShutdown) {
     CourseSystem& testSystem = CourseSystem::getInstance();
     
-    // 测试初始化 - 使用项目根目录下的测试数据和日志目录
-    EXPECT_TRUE(testSystem.initialize("../test_data2", "../test_log2"));
+    // 测试初始化 - 使用规定的测试数据目录
+    EXPECT_TRUE(testSystem.initialize("../test_data", "../test_log"));
     
     // 测试关闭
     testSystem.shutdown();

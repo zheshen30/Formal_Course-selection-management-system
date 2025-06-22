@@ -17,6 +17,13 @@
 
 cmake_minimum_required(VERSION 3.10)
 
+# 设置测试可执行文件的输出目录
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
+
+# 创建测试数据和日志目录
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/test_data)
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/test_log)
+
 # 添加必要的include目录
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../include

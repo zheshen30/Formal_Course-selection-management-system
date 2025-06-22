@@ -37,7 +37,7 @@
 - **CMake**：构建系统
 - **nlohmann/json**：JSON解析库
 - **spdlog**：日志库
-- **OpenSSL**：哈希加密
+- **OpenSSL**：加密库（必须）
 - **GoogleTest**：单元测试框架（可选）
 
 ## 环境要求
@@ -45,16 +45,22 @@
 - C++17兼容的编译器(GCC 8+/Clang 7+/MSVC 19.14+)
 - CMake 3.10或更高版本
 - 以下依赖库：
-  - nlohmann/json
-  - spdlog
-  - fmt
-  - OpenSSL
+  - nlohmann/json（已包含在源码中）
+  - **OpenSSL**（必须安装，用于密码哈希）
 
 ## 构建与运行
 
 ### 直接构建
 
-1. 确保已安装所有依赖库
+1. 确保已安装OpenSSL库
+   ```bash
+   # Debian/Ubuntu
+   sudo apt-get install libssl-dev
+   # CentOS/RHEL
+   sudo yum install openssl-devel
+   # macOS
+   brew install openssl
+   ```
 2. 克隆代码库
    ```
    git clone https://github.com/yourusername/course-selection-system.git
@@ -66,10 +72,21 @@
    cmake ..
    make
    ```
+   > 如果OpenSSL安装在非标准位置，可以使用：`cmake -DOPENSSL_ROOT_DIR=/path/to/openssl ..`
 4. 运行程序
    ```
    ./course_system
    ```
+
+## 目录结构与使用规范
+
+系统定义了严格的目录结构和使用规范，详细说明请查看[目录结构和使用规范](docs/directory_structure.md)。
+
+主要原则：
+- 主程序必须在`build`目录下运行
+- 数据文件存储在项目根目录的`data`文件夹
+- 日志文件存储在项目根目录的`log`文件夹
+- 测试程序在`build/tests`目录下运行
 
 ## 数据与日志存储
 

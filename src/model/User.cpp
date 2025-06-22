@@ -17,15 +17,11 @@
 #include "../../include/model/User.h"
 #include "../../include/system/SystemException.h"
 
-// 根据编译配置选择是否使用OpenSSL
-#ifndef NO_OPENSSL
-  #ifdef HAVE_OPENSSL
-    #include <openssl/sha.h>
-    #include <openssl/rand.h>
-    #include <openssl/evp.h>
-    #include <openssl/opensslv.h> // 用于版本检查
-  #endif
-#endif
+// OpenSSL库头文件
+#include <openssl/sha.h>
+#include <openssl/rand.h>
+#include <openssl/evp.h>
+#include <openssl/opensslv.h> // 用于版本检查
 
 #include <sstream>
 #include <iomanip>
@@ -127,8 +123,7 @@ std::string User::generatePasswordHash(const std::string& password, const std::s
     // 将密码和盐值拼接
     std::string combined = password + salt;
     
-    #if !defined(NO_OPENSSL) && defined(HAVE_OPENSSL)
-    // OpenSSL 3.0 实现 - 使用EVP API代替废弃的SHA256_*函数
+    // OpenSSL实现 - 使用EVP API
     unsigned char hash[SHA256_DIGEST_LENGTH];
     
     #if OPENSSL_VERSION_NUMBER >= 0x30000000L
@@ -170,26 +165,6 @@ std::string User::generatePasswordHash(const std::string& password, const std::s
     }
     
     return ss.str();
-    
-    #else
-    // 备用实现 - 使用C++标准库的哈希函数
-    // 注意：这不是加密安全的，仅在无法使用OpenSSL时作为备用方案
-    
-    // 使用多个哈希组合增强安全性
-    std::size_t hash1 = std::hash<std::string>{}(combined);
-    std::size_t hash2 = std::hash<std::string>{}(combined + "extra_salt1");
-    std::size_t hash3 = std::hash<std::string>{}(combined + "extra_salt2");
-    std::size_t hash4 = std::hash<std::string>{}(combined + "extra_salt3");
-    
-    // 组合哈希值
-    std::stringstream ss;
-    ss << std::hex << std::setw(16) << std::setfill('0') << hash1;
-    ss << std::hex << std::setw(16) << std::setfill('0') << hash2;
-    ss << std::hex << std::setw(16) << std::setfill('0') << hash3;
-    ss << std::hex << std::setw(16) << std::setfill('0') << hash4;
-    
-    return ss.str();
-    #endif
 }
 
 std::string User::generateSalt() {

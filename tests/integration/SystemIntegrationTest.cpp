@@ -19,6 +19,7 @@
 #include "../../include/manager/UserManager.h"
 #include "../../include/manager/CourseManager.h"
 #include "../../include/manager/EnrollmentManager.h"
+#include <filesystem>
 
 // 系统集成测试fixture
 class SystemIntegrationTest : public ::testing::Test {
@@ -29,11 +30,18 @@ protected:
             ::testing::UnitTest::GetInstance()->current_test_info();
         std::string test_name = test_info->name();
         
-        // 为每个测试创建唯一的数据目录
-        test_data_dir = "./test_integration_data_" + test_name;
-        test_log_dir = "./test_integration_log_" + test_name;
+        // 为每个测试创建唯一的测试数据和日志目录
+        test_data_dir = "../test_data";
+        test_log_dir = "../test_log";
         
         // 设置测试环境
+        try {
+            std::filesystem::create_directories(test_data_dir);
+            std::filesystem::create_directories(test_log_dir);
+        } catch (const std::exception& e) {
+            std::cerr << "创建测试目录异常: " << e.what() << std::endl;
+        }
+        
         system = &CourseSystem::getInstance();
         system->initialize(test_data_dir, test_log_dir);
         

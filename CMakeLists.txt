@@ -53,17 +53,12 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 # 设置OpenSSL路径 - 作为查找提示而非直接指定
 set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/dependlib/openssl")
 
-# 尝试查找OpenSSL库 (将REQUIRED改为QUIET)
+# 查找OpenSSL库 (设置为REQUIRED)
 find_package(OpenSSL QUIET)
 
-# 输出详细的OpenSSL查找信息
-if(OPENSSL_FOUND)
-    message(STATUS "OpenSSL Found: YES")
-    message(STATUS "OpenSSL Version: ${OPENSSL_VERSION}")
-    message(STATUS "OpenSSL Include Dir: ${OPENSSL_INCLUDE_DIR}")
-    message(STATUS "OpenSSL Libraries: ${OPENSSL_LIBRARIES}")
-else()
-    message(WARNING "OpenSSL NOT FOUND! Using manual configuration...")
+# 如果未找到OpenSSL，尝试手动配置
+if(NOT OPENSSL_FOUND)
+    message(STATUS "通过标准方式未找到OpenSSL，尝试手动配置...")
     message(STATUS "检查本地OpenSSL目录: ${OPENSSL_ROOT_DIR}")
     
     # 手动检查OpenSSL目录结构
@@ -103,29 +98,18 @@ else()
             set(OPENSSL_LIBRARIES "${OPENSSL_SSL_LIBRARY};${OPENSSL_CRYPTO_LIBRARY}")
             set(OPENSSL_FOUND TRUE)
         else()
-            message(WARNING "找不到OpenSSL库文件!")
-            message(STATUS "请检查依赖库是否正确安装")
-            message(STATUS "依赖库目录结构:")
-            execute_process(
-                COMMAND ls -la ${OPENSSL_ROOT_DIR}
-                OUTPUT_VARIABLE OPENSSL_DIR_CONTENT
-            )
-            message(STATUS "${OPENSSL_DIR_CONTENT}")
-            
-            if(EXISTS "${OPENSSL_ROOT_DIR}/lib")
-                execute_process(
-                    COMMAND ls -la ${OPENSSL_ROOT_DIR}/lib
-                    OUTPUT_VARIABLE OPENSSL_LIB_CONTENT
-                )
-                message(STATUS "lib目录内容: ${OPENSSL_LIB_CONTENT}")
-            endif()
+            message(FATAL_ERROR "找不到OpenSSL库文件! 构建终止。")
         endif()
     else()
-        message(WARNING "找不到OpenSSL头文件!")
-        message(STATUS "头文件应位于: ${OPENSSL_ROOT_DIR}/include/openssl/ssl.h")
-        message(STATUS "请检查依赖库是否正确安装")
+        message(FATAL_ERROR "找不到OpenSSL头文件! 构建终止。")
     endif()
 endif()
+
+# 输出详细的OpenSSL查找信息
+message(STATUS "OpenSSL已找到:")
+message(STATUS "  版本: ${OPENSSL_VERSION}")
+message(STATUS "  包含目录: ${OPENSSL_INCLUDE_DIR}")
+message(STATUS "  库文件: ${OPENSSL_LIBRARIES}")
 
 # 查找必要的依赖库
 find_package(Threads REQUIRED)
@@ -195,35 +179,20 @@ target_include_directories(course_system PRIVATE
     ${OPENSSL_INCLUDE_DIR}
 )
 
-# 链接依赖库
-if(OPENSSL_FOUND)
-    if(TARGET OpenSSL::SSL AND TARGET OpenSSL::Crypto)
-        target_link_libraries(course_system PRIVATE
-            OpenSSL::SSL
-            OpenSSL::Crypto
-            Threads::Threads
-        )
-    else()
-        # 手动配置的情况
-        target_include_directories(course_system PRIVATE ${OPENSSL_INCLUDE_DIR})
-        target_link_libraries(course_system PRIVATE
-            ${OPENSSL_LIBRARIES}
-            Threads::Threads
-        )
-    endif()
-    
-    # 添加宏定义以启用OpenSSL相关功能
-    target_compile_definitions(course_system PRIVATE HAVE_OPENSSL)
-else()
-    message(WARNING "构建没有OpenSSL支持! 某些加密功能将不可用。")
-    
-    # 链接其他库，但不包括OpenSSL
+# 链接OpenSSL库
+if(TARGET OpenSSL::SSL AND TARGET OpenSSL::Crypto)
     target_link_libraries(course_system PRIVATE
+        OpenSSL::SSL
+        OpenSSL::Crypto
         Threads::Threads
     )
-    
-    # 添加宏定义以禁用OpenSSL相关功能
-    target_compile_definitions(course_system PRIVATE NO_OPENSSL)
+else()
+    # 手动配置的情况
+    target_include_directories(course_system PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_link_libraries(course_system PRIVATE
+        ${OPENSSL_LIBRARIES}
+        Threads::Threads
+    )
 endif()
 
 # 安装目标
@@ -244,8 +213,8 @@ add_custom_target(copy_data_files ALL
 )
 
 # 显示项目信息
-message(STATUS "Project: ${PROJECT_NAME}")
-message(STATUS "Version: ${PROJECT_VERSION}")
-message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
-message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Using precompiled headers: ${USE_NATIVE_PCH}")
+message(STATUS "项目: ${PROJECT_NAME}")
+message(STATUS "版本: ${PROJECT_VERSION}")
+message(STATUS "C++标准: ${CMAKE_CXX_STANDARD}")
+message(STATUS "构建类型: ${CMAKE_BUILD_TYPE}")
+message(STATUS "OpenSSL已启用")
