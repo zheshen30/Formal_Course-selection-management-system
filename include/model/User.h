@@ -112,6 +112,12 @@ public:
      * @param password 新密码
      */
     void setPassword(std::string password);
+    
+    /**
+     * @brief 获取密码盐值（仅用于测试）
+     * @return 盐值字符串
+     */
+    const std::string& getSalt() const { return salt_; }
 
 protected:
     std::string id_;       ///< 用户ID

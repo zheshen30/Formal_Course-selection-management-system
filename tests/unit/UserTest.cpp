@@ -141,7 +141,7 @@ TEST_F(UserTest, PasswordChangeTest) {
     EXPECT_FALSE(student.verifyPassword("oldpassword"));
     
     // 验证盐值已更新
-    std::string originalSalt = student.salt_;
+    std::string originalSalt = student.getSalt();
     EXPECT_FALSE(originalSalt.empty());
     
     // 再次修改密码
@@ -153,7 +153,7 @@ TEST_F(UserTest, PasswordChangeTest) {
     EXPECT_FALSE(student.verifyPassword("oldpassword"));
     
     // 验证盐值已再次更新（盐值应该发生变化）
-    EXPECT_NE(originalSalt, student.salt_);
+    EXPECT_NE(originalSalt, student.getSalt());
 }
 
 int main(int argc, char **argv) {
