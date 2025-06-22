@@ -1,0 +1,61 @@
+[2025-06-22 11:10:25.466] [INFO] 日志系统初始化成功，日志目录：/home/zheshen/proj_des_formal/build/../log
+[2025-06-22 11:10:25.467] [INFO] 日志系统初始化成功
+[2025-06-22 11:10:25.467] [INFO] 数据目录: /home/zheshen/proj_des_formal/build/../data
+[2025-06-22 11:10:25.468] [INFO] 日志目录: /home/zheshen/proj_des_formal/build/../log
+[2025-06-22 11:10:25.481] [INFO] 国际化系统初始化成功，数据目录：/home/zheshen/proj_des_formal/build/../data
+[2025-06-22 11:10:25.482] [INFO] CourseSystem正在初始化
+[2025-06-22 11:10:25.482] [INFO] 设置数据目录: /home/zheshen/proj_des_formal/build/../data
+[2025-06-22 11:10:25.482] [INFO] 成功加载文件: /home/zheshen/proj_des_formal/build/../data/users.json
+[2025-06-22 11:10:25.483] [INFO] 成功加载用户数据，共 3 个用户
+[2025-06-22 11:10:25.483] [INFO] 成功加载文件: /home/zheshen/proj_des_formal/build/../data/courses.json
+[2025-06-22 11:10:25.484] [INFO] 成功加载课程数据，共 3 个课程
+[2025-06-22 11:10:25.484] [INFO] 成功加载文件: /home/zheshen/proj_des_formal/build/../data/enrollment.json
+[2025-06-22 11:10:25.484] [INFO] 成功加载选课数据，共 1 条记录
+[2025-06-22 11:10:25.485] [INFO] 系统初始化成功
+[2025-06-22 11:10:38.645] [WARNING] 认证失败：用户 admin001 密码错误
+[2025-06-22 11:10:38.647] [WARNING] 用户 admin001 登录失败
+[2025-06-22 11:11:49.488] [WARNING] 认证失败：用户 admin001 密码错误
+[2025-06-22 11:11:49.488] [WARNING] 用户 admin001 登录失败
+[2025-06-22 11:14:19.520] [WARNING] 认证失败：用户 admin001 密码错误
+[2025-06-22 11:14:19.520] [WARNING] 用户 admin001 登录失败
+[2025-06-22 11:15:14.879] [WARNING] 认证失败：用户 student001 密码错误
+[2025-06-22 11:15:14.879] [WARNING] 用户 student001 登录失败
+[2025-06-22 11:15:32.167] [WARNING] 认证失败：用户 student001 密码错误
+[2025-06-22 11:15:32.167] [WARNING] 用户 student001 登录失败
+[2025-06-22 11:16:24.253] [WARNING] 认证失败：用户ID admin 不存在
+[2025-06-22 11:16:24.253] [WARNING] 用户 admin 登录失败
+[2025-06-22 11:16:38.133] [WARNING] 认证失败：用户 admin001 密码错误
+[2025-06-22 11:16:38.133] [WARNING] 用户 admin001 登录失败
+[2025-06-22 11:21:06.353] [INFO] 日志系统初始化成功，日志目录：/home/zheshen/proj_des_formal/build/../log
+[2025-06-22 11:21:06.354] [INFO] 日志系统初始化成功
+[2025-06-22 11:21:06.354] [INFO] 数据目录: /home/zheshen/proj_des_formal/build/../data
+[2025-06-22 11:21:06.354] [INFO] 日志目录: /home/zheshen/proj_des_formal/build/../log
+[2025-06-22 11:21:06.372] [INFO] 国际化系统初始化成功，数据目录：/home/zheshen/proj_des_formal/build/../data
+[2025-06-22 11:21:06.377] [INFO] CourseSystem正在初始化
+[2025-06-22 11:21:06.377] [INFO] 设置数据目录: /home/zheshen/proj_des_formal/build/../data
+[2025-06-22 11:21:06.379] [INFO] 成功加载文件: /home/zheshen/proj_des_formal/build/../data/users.json
+[2025-06-22 11:21:06.380] [INFO] 成功加载用户数据，共 3 个用户
+[2025-06-22 11:21:06.380] [INFO] 成功加载文件: /home/zheshen/proj_des_formal/build/../data/courses.json
+[2025-06-22 11:21:06.382] [INFO] 成功加载课程数据，共 3 个课程
+[2025-06-22 11:21:06.384] [INFO] 成功加载文件: /home/zheshen/proj_des_formal/build/../data/enrollment.json
+[2025-06-22 11:21:06.384] [INFO] 成功加载选课数据，共 1 条记录
+[2025-06-22 11:21:06.384] [INFO] 系统初始化成功
+[2025-06-22 11:21:17.141] [WARNING] 认证失败：用户 admin001 密码错误
+[2025-06-22 11:21:17.141] [WARNING] 用户 admin001 登录失败
+[2025-06-22 11:32:21.060] [INFO] 日志系统初始化成功，日志目录：/home/zheshen/proj_des_formal/build/../log
+[2025-06-22 11:32:21.060] [INFO] 日志系统初始化成功
+[2025-06-22 11:32:21.062] [INFO] 数据目录: /home/zheshen/proj_des_formal/build/../data
+[2025-06-22 11:32:21.063] [INFO] 日志目录: /home/zheshen/proj_des_formal/build/../log
+[2025-06-22 11:32:21.075] [INFO] 国际化系统初始化成功，数据目录：/home/zheshen/proj_des_formal/build/../data
+[2025-06-22 11:32:21.080] [INFO] CourseSystem正在初始化
+[2025-06-22 11:32:21.080] [INFO] 设置数据目录: /home/zheshen/proj_des_formal/build/../data
+[2025-06-22 11:32:21.081] [INFO] 成功加载文件: /home/zheshen/proj_des_formal/build/../data/users.json
+[2025-06-22 11:32:21.081] [INFO] 成功加载用户数据，共 3 个用户
+[2025-06-22 11:32:21.083] [INFO] 成功加载文件: /home/zheshen/proj_des_formal/build/../data/courses.json
+[2025-06-22 11:32:21.083] [INFO] 成功加载课程数据，共 3 个课程
+[2025-06-22 11:32:21.084] [INFO] 成功加载文件: /home/zheshen/proj_des_formal/build/../data/enrollment.json
+[2025-06-22 11:32:21.084] [INFO] 成功加载选课数据，共 1 条记录
+[2025-06-22 11:32:21.084] [INFO] 系统初始化成功
+[2025-06-22 11:32:30.949] [INFO] 用户 admin001 认证成功
+[2025-06-22 11:32:30.950] [INFO] 用户 admin001 登录成功
+[2025-06-22 11:32:52.701] [INFO] 用户 admin001 已注销

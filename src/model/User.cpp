@@ -35,16 +35,11 @@
 User::User(std::string id, std::string name, std::string password)
     : id_(std::move(id)), name_(std::move(name)) {
     // 对特定用户进行特殊处理
-    if (id_ == "admin001" && password == "password123") {
-        // 管理员用户特殊处理
+    if (id_ == "admin001" || id_ == "teacher001" || id_ == "student001") {
+        // 特殊用户处理 - 使用不带盐值的纯密码哈希
         salt_ = "";
-        // 这是"password123"的SHA-256哈希值
-        password_ = "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f";
-    } else if ((id_ == "teacher001" || id_ == "student001") && password == "password123") {
-        // 教师和学生用户特殊处理
-        salt_ = "";
-        // 这是"password123"的SHA-256哈希值
-        password_ = "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f";
+        // 计算纯哈希值
+        password_ = generatePasswordHash(password, "");
     } else {
         // 标准处理方式
         salt_ = generateSalt();
@@ -70,20 +65,17 @@ User& User::operator=(User&& other) noexcept {
 }
 
 bool User::verifyPassword(const std::string& password) const {
-    // 方法1：直接比较哈希值（针对特殊账户且盐值为空）
+    // 方法1：纯哈希值比较（针对特殊账户且盐值为空）
     if (salt_.empty()) {
-        // 对admin001用户特殊处理
-        if (id_ == "admin001") {
-            std::cout << "管理员账户特殊处理：使用直接哈希验证" << std::endl;
-            // 直接比较密码是否为测试用例中的密码
-            return password == "password123";
-        }
-        
-        // 对teacher001和student001用户特殊处理
-        if ((id_ == "teacher001" || id_ == "student001")) {
-            std::cout << "教师/学生账户特殊处理：使用直接哈希验证" << std::endl;
-            // 直接比较密码是否为测试用例中的密码
-            return password == "password123";
+        if (id_ == "admin001" || id_ == "teacher001" || id_ == "student001") {
+            std::cout << "特殊账户处理：使用纯哈希验证（无盐值）" << std::endl;
+            // 计算纯哈希值并与存储的哈希值比较
+            std::string pureHash = generatePasswordHash(password, "");
+            std::cout << "  输入密码的纯哈希: " << pureHash << std::endl;
+            std::cout << "  存储的哈希: " << password_ << std::endl;
+            bool directMatch = (password_ == pureHash);
+            std::cout << "  纯哈希匹配: " << (directMatch ? "是" : "否") << std::endl;
+            return directMatch;
         }
     }
     
@@ -100,8 +92,7 @@ bool User::verifyPassword(const std::string& password) const {
     // 判断是否匹配
     bool combinedMatch = password_ == combinedHash;
     
-    std::cout << "  直接哈希匹配: 否" << std::endl;
-    std::cout << "  组合哈希匹配: " << (combinedMatch ? "是" : "否") << std::endl;
+    std::cout << "  哈希匹配: " << (combinedMatch ? "是" : "否") << std::endl;
     
     return combinedMatch;
 }

@@ -31,18 +31,18 @@ protected:
 
 // 测试Admin类的构造函数和基本功能
 TEST_F(UserTest, AdminConstructorAndBasicFunctions) {
-    Admin admin("admin001", "管理员", "password123");
+    Admin admin("admin001", "管理员", "admin");
     
     EXPECT_EQ("admin001", admin.getId());
     EXPECT_EQ("管理员", admin.getName());
-    EXPECT_TRUE(admin.verifyPassword("password123"));
+    EXPECT_TRUE(admin.verifyPassword("admin"));
     EXPECT_FALSE(admin.verifyPassword("wrongpassword"));
     EXPECT_EQ(UserType::ADMIN, admin.getType());
 }
 
 // 测试Teacher类的构造函数和基本功能
 TEST_F(UserTest, TeacherConstructorAndBasicFunctions) {
-    Teacher teacher("teacher001", "教师", "password123", 
+    Teacher teacher("teacher001", "教师", "password", 
                    "计算机科学", "教授", "teacher@example.com");
     
     EXPECT_EQ("teacher001", teacher.getId());
@@ -50,14 +50,14 @@ TEST_F(UserTest, TeacherConstructorAndBasicFunctions) {
     EXPECT_EQ("计算机科学", teacher.getDepartment());
     EXPECT_EQ("教授", teacher.getTitle());
     EXPECT_EQ("teacher@example.com", teacher.getContact());
-    EXPECT_TRUE(teacher.verifyPassword("password123"));
+    EXPECT_TRUE(teacher.verifyPassword("password"));
     EXPECT_FALSE(teacher.verifyPassword("wrongpassword"));
     EXPECT_EQ(UserType::TEACHER, teacher.getType());
 }
 
 // 测试Student类的构造函数和基本功能
 TEST_F(UserTest, StudentConstructorAndBasicFunctions) {
-    Student student("student001", "学生", "password123",
+    Student student("student001", "学生", "password",
                   "男", 20, "计算机科学", "计算机2班", "student@example.com");
     
     EXPECT_EQ("student001", student.getId());
@@ -67,7 +67,7 @@ TEST_F(UserTest, StudentConstructorAndBasicFunctions) {
     EXPECT_EQ("计算机科学", student.getDepartment());
     EXPECT_EQ("计算机2班", student.getClassInfo());
     EXPECT_EQ("student@example.com", student.getContact());
-    EXPECT_TRUE(student.verifyPassword("password123"));
+    EXPECT_TRUE(student.verifyPassword("password"));
     EXPECT_FALSE(student.verifyPassword("wrongpassword"));
     EXPECT_EQ(UserType::STUDENT, student.getType());
 }

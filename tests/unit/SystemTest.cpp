@@ -145,9 +145,13 @@ TEST_F(SystemTest, LoginAndPermissionCheck) {
     // 测试注销
     system->logout();
     
-    // 测试错误登录
-    EXPECT_FALSE(system->login("nonexistent", "password"));
+    // 测试错误密码
     EXPECT_FALSE(system->login("admin001", "wrongpassword"));
+    EXPECT_EQ(nullptr, system->getCurrentUser());
+    
+    // 测试不存在的用户
+    EXPECT_FALSE(system->login("nonexistent", "anypassword"));
+    EXPECT_EQ(nullptr, system->getCurrentUser());
 }
 
 // 测试语言切换
