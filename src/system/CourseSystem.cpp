@@ -27,6 +27,7 @@
 #include <limits>
 #include <thread>
 #include <chrono>
+#include <unistd.h>
 
 CourseSystem& CourseSystem::getInstance() {
     static CourseSystem instance;
@@ -138,6 +139,10 @@ int CourseSystem::run() {
     std::cout << "欢迎界面显示完成，准备选择语言" << std::endl;
     
     try {
+        // 检查输入是否来自终端
+        bool isTerminal = isatty(fileno(stdin));
+        std::cout << "输入来源: " << (isTerminal ? "终端" : "非终端(管道/重定向)") << std::endl;
+        
         // 选择语言
         std::cout << "请选择语言 / Please select language:" << std::endl;
         std::cout << "1. 中文" << std::endl;
@@ -145,15 +150,50 @@ int CourseSystem::run() {
         
         int choice = 0;
         std::string input;
-        do {
-            std::cout << "> ";
-            std::getline(std::cin, input);
-            std::cout << "收到输入: " << input << std::endl;
-            
-            if (!InputValidator::validateChoice(input, 1, 2, choice)) {
-                std::cout << "输入无效，请重新选择 / Invalid input, please try again" << std::endl;
-            }
-        } while (choice < 1 || choice > 2);
+        int attempts = 0;
+        const int MAX_ATTEMPTS = 5; // 最大尝试次数
+        
+        // 如果输入不是来自终端，直接使用默认选择
+        if (!isTerminal) {
+            std::cout << "检测到非终端输入，使用默认选择: 中文" << std::endl;
+            choice = 1;
+        } else {
+            do {
+                std::cout << "> ";
+                std::getline(std::cin, input);
+                std::cout << "收到输入: [" << input << "]" << std::endl;
+                
+                // 去除输入两端的空白字符
+                input.erase(0, input.find_first_not_of(" \t\r\n"));
+                input.erase(input.find_last_not_of(" \t\r\n") + 1);
+                
+                attempts++;
+                
+                if (input.empty()) {
+                    std::cout << "输入为空，请输入数字 / Empty input, please enter a number" << std::endl;
+                    continue;
+                }
+                
+                // 直接检查输入是否为"1"或"2"
+                if (input == "1") {
+                    choice = 1;
+                    std::cout << "检测到有效输入: 1" << std::endl;
+                    break;
+                } else if (input == "2") {
+                    choice = 2;
+                    std::cout << "检测到有效输入: 2" << std::endl;
+                    break;
+                } else {
+                    std::cout << "输入无效，请输入数字 / Invalid input, please enter a number" << std::endl;
+                    
+                    if (attempts >= MAX_ATTEMPTS) {
+                        std::cout << "多次输入无效，默认选择中文 / Multiple invalid inputs, defaulting to Chinese" << std::endl;
+                        choice = 1; // 默认选择中文
+                        break;
+                    }
+                }
+            } while (true);
+        }
         
         std::cout << "选择了选项: " << choice << std::endl;
         
@@ -382,6 +422,17 @@ void CourseSystem::showMainMenu() {
     std::cout << "开始显示主菜单..." << std::endl;
     
     try {
+        // 检查输入是否来自终端
+        bool isTerminal = isatty(fileno(stdin));
+        std::cout << "输入来源: " << (isTerminal ? "终端" : "非终端(管道/重定向)") << std::endl;
+        
+        // 确保输入流处于良好状态
+        if (std::cin.fail() || !std::cin.good()) {
+            std::cout << "输入流状态异常，正在重置..." << std::endl;
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+        
         // 显示一个固定的标题，避免依赖I18n
         std::cout << "================================================" << std::endl;
         std::cout << "                  主菜单 / Main Menu             " << std::endl;
@@ -422,23 +473,50 @@ void CourseSystem::showMainMenu() {
         // 获取用户输入
         int choice = 0;
         std::string input;
-        do {
-            std::cout << "> ";
-            std::getline(std::cin, input);
-            std::cout << "收到输入: " << input << std::endl;
-            
-            // 简化输入验证，避免依赖InputValidator
-            try {
-                choice = std::stoi(input);
-                if (choice < 1 || choice > 2) {
-                    std::cout << "输入超出范围，请输入1或2 / Input out of range, please enter 1 or 2" << std::endl;
-                    choice = 0;
+        int attempts = 0;
+        const int MAX_ATTEMPTS = 5; // 最大尝试次数
+        
+        // 如果输入不是来自终端，直接使用默认选择
+        if (!isTerminal) {
+            std::cout << "检测到非终端输入，使用默认选择: 退出" << std::endl;
+            choice = 2; // 默认退出
+        } else {
+            do {
+                std::cout << "> ";
+                std::getline(std::cin, input);
+                std::cout << "收到输入: [" << input << "]" << std::endl;
+                
+                // 去除输入两端的空白字符
+                input.erase(0, input.find_first_not_of(" \t\r\n"));
+                input.erase(input.find_last_not_of(" \t\r\n") + 1);
+                
+                attempts++;
+                
+                if (input.empty()) {
+                    std::cout << "输入为空，请输入数字 / Empty input, please enter a number" << std::endl;
+                    continue;
                 }
-            } catch (...) {
-                std::cout << "输入无效，请输入数字 / Invalid input, please enter a number" << std::endl;
-                choice = 0;
-            }
-        } while (choice < 1 || choice > 2);
+                
+                // 直接检查输入是否为"1"或"2"
+                if (input == "1") {
+                    choice = 1;
+                    std::cout << "检测到有效输入: 1" << std::endl;
+                    break;
+                } else if (input == "2") {
+                    choice = 2;
+                    std::cout << "检测到有效输入: 2" << std::endl;
+                    break;
+                } else {
+                    std::cout << "输入无效，请输入数字 / Invalid input, please enter a number" << std::endl;
+                    
+                    if (attempts >= MAX_ATTEMPTS) {
+                        std::cout << "多次输入无效，默认选择退出 / Multiple invalid inputs, defaulting to exit" << std::endl;
+                        choice = 2; // 默认选择退出
+                        break;
+                    }
+                }
+            } while (true);
+        }
         
         std::cout << "选择了选项: " << choice << std::endl;
         

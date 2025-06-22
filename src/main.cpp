@@ -153,6 +153,12 @@ int main() {
         // 即使日志初始化失败，也继续执行
     }
     
+    // 注意：不要清空输入缓冲区，以免影响管道输入
+    // std::cin.clear();
+    // std::cin.sync();
+    // std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    // std::cout << "已清除输入缓冲区" << std::endl;
+    
     // 获取CourseSystem单例
     std::cout << "获取CourseSystem实例..." << std::endl;
     CourseSystem& system = CourseSystem::getInstance();
