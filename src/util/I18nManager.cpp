@@ -20,7 +20,7 @@
 #include "../../include/system/SystemException.h"
 #include "../../include/util/Logger.h"
 
-#include <json.hpp>
+#include "../../nlohmann/json.hpp"
 #include <stdexcept>
 #include <fstream>
 #include <iostream>
@@ -204,7 +204,9 @@ std::string I18nManager::formatString(const std::string& format) const {
 template<typename T, typename... Args>
 std::string I18nManager::formatString(const std::string& format, T value, Args... args) const {
     std::string result = format;
-    std::string placeholder = "{" + std::to_string(sizeof...(args)) + "}";
+    // 修正占位符索引，使用参数的总数减去剩余参数数量
+    // 例如：对于formatString("text", val1, val2, val3)，第一个参数val1应该替换{0}
+    std::string placeholder = "{0}";
     
     // 查找并替换占位符
     size_t pos = result.find(placeholder);
@@ -212,8 +214,24 @@ std::string I18nManager::formatString(const std::string& format, T value, Args..
         result.replace(pos, placeholder.length(), formatValue(value));
     }
     
-    // 递归处理其余参数
-    return formatString(result, args...);
+    // 递归处理其余参数，并更新后续占位符的索引
+    if constexpr (sizeof...(args) > 0) {
+        // 更新后续占位符，将{1}, {2}...变为{0}, {1}...
+        std::string nextFormat = result;
+        for (size_t i = 1; i <= sizeof...(args); ++i) {
+            std::string oldPlaceholder = "{" + std::to_string(i) + "}";
+            std::string newPlaceholder = "{" + std::to_string(i - 1) + "}";
+            
+            size_t placeholderPos = nextFormat.find(oldPlaceholder);
+            while (placeholderPos != std::string::npos) {
+                nextFormat.replace(placeholderPos, oldPlaceholder.length(), newPlaceholder);
+                placeholderPos = nextFormat.find(oldPlaceholder, placeholderPos + newPlaceholder.length());
+            }
+        }
+        return formatString(nextFormat, args...);
+    }
+    
+    return result;
 }
 
 std::string I18nManager::languageToString(Language language) {

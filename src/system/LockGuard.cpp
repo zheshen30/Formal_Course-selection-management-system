@@ -16,6 +16,8 @@
  */
 #include "../../include/system/LockGuard.h"
 #include "../../include/system/SystemException.h"
+#include <iostream>
+#include <thread>
 
 LockGuard::LockGuard(std::mutex& mutex, unsigned long timeout)
     : mutex_(mutex), locked_(false) {

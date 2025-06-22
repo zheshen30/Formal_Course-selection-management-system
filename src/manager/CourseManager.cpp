@@ -20,7 +20,7 @@
 #include "../../include/system/SystemException.h"
 #include "../../include/util/Logger.h"
 
-#include <json.hpp>
+#include "../../nlohmann/json.hpp"
 #include <algorithm>
 #include <vector>
 #include <stdexcept>

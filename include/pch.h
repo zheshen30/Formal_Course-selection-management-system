@@ -37,7 +37,7 @@
 #include <iomanip>
 
 // 第三方库头文件
-#include <json.hpp>
+#include "../nlohmann/json.hpp"
 
 // OpenSSL库头文件 - 根据CMake配置有条件地包含
 #ifndef NO_OPENSSL

@@ -89,16 +89,14 @@ std::string DataManager::loadJsonFromFile(const std::string& filename) {
 }
 
 bool DataManager::saveJsonToFile(const std::string& filename, const std::string& jsonData) {
-    LockGuard lock(mutex_, 5000);
-    if (!lock.isLocked()) {
-        throw SystemException(ErrorType::LOCK_TIMEOUT, "获取数据管理器锁超时");
-    }
+    std::string filePathStr;
     
-    std::string filePath = getDataFilePath(filename);
-    std::string tempFilePath = filePath + ".tmp";
+    // 使用getDataFilePath获取正确的文件路径
+    filePathStr = getDataFilePath(filename);
+    std::string tempFilePath = filePathStr + ".tmp";
     
     // 确保目录存在
-    fs::path parentPath = fs::path(filePath).parent_path();
+    fs::path parentPath = fs::path(filePathStr).parent_path();
     if (!parentPath.empty() && !fs::exists(parentPath)) {
         try {
             fs::create_directories(parentPath);
@@ -127,25 +125,25 @@ bool DataManager::saveJsonToFile(const std::string& filename, const std::string&
         
         // 重命名临时文件为目标文件
         try {
-            if (fs::exists(filePath)) {
-                fs::remove(filePath);
+            if (fs::exists(filePathStr)) {
+                fs::remove(filePathStr);
             }
-            fs::rename(tempFilePath, filePath);
+            fs::rename(tempFilePath, filePathStr);
         } catch (const std::exception& e) {
             Logger::getInstance().error(std::string("重命名临时文件失败: ") + e.what());
             throw SystemException(ErrorType::FILE_ACCESS_DENIED, std::string("重命名临时文件失败: ") + e.what());
         }
         
-        Logger::getInstance().info("成功保存文件: " + filePath);
+        Logger::getInstance().info("成功保存文件: " + filePathStr);
         return true;
     } catch (const SystemException&) {
         throw; // 重新抛出系统异常
     } catch (const std::exception& e) {
-        Logger::getInstance().error("保存文件失败: " + filePath + " - " + e.what());
+        Logger::getInstance().error("保存文件失败: " + filePathStr + " - " + e.what());
         throw SystemException(ErrorType::FILE_ACCESS_DENIED, std::string("保存文件失败: ") + e.what());
     }
     
-    return true;  // 添加返回语句，避免警告
+    return false; // 默认返回失败（通常不会执行到这里）
 }
 
 bool DataManager::fileExists(const std::string& filename) const {
@@ -170,6 +168,13 @@ bool DataManager::createDirectory(const std::string& dirname) const {
 }
 
 std::string DataManager::getDataFilePath(const std::string& filename) const {
+    // 检查filename是否已经包含数据目录路径
+    if (filename.find(dataDirectory_) == 0) {
+        // 如果filename已经包含了数据目录路径，直接返回
+        return filename;
+    }
+    
+    // 否则拼接路径
     fs::path filePath = fs::path(dataDirectory_) / filename;
     return filePath.string();
 }

@@ -21,7 +21,6 @@ cmake_minimum_required(VERSION 3.10)
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
     ${CMAKE_CURRENT_SOURCE_DIR}/../nlohmann
-    ${CMAKE_CURRENT_SOURCE_DIR}/../spdlog/include
 )
 
 # 查找GoogleTest
@@ -49,7 +48,6 @@ add_library(test_pch OBJECT ${TEST_PCH_SOURCE})
 target_include_directories(test_pch PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
     ${CMAKE_CURRENT_SOURCE_DIR}/../nlohmann
-    ${CMAKE_CURRENT_SOURCE_DIR}/../spdlog/include
     ${GTEST_INCLUDE_DIRS}
     ${OPENSSL_INCLUDES}
 )
@@ -129,7 +127,7 @@ if(OPENSSL_FOUND)
         target_include_directories(test_user PRIVATE ${OPENSSL_INCLUDES})
         target_link_libraries(test_user PRIVATE
             ${GTEST_LIBRARIES}
-            GTest::Main
+           GTest::Main
             ${OPENSSL_LIBS}
         )
     endif()
@@ -203,7 +201,6 @@ if(OPENSSL_FOUND)
             ${GTEST_LIBRARIES}
             GTest::Main
             ${OPENSSL_TARGETS}
-            spdlog::spdlog
         )
     else()
         target_include_directories(test_util PRIVATE ${OPENSSL_INCLUDES})
@@ -211,14 +208,12 @@ if(OPENSSL_FOUND)
             ${GTEST_LIBRARIES}
             GTest::Main
             ${OPENSSL_LIBS}
-            spdlog::spdlog
         )
     endif()
 else()
     target_link_libraries(test_util PRIVATE
         ${GTEST_LIBRARIES}
         GTest::Main
-        spdlog::spdlog
     )
 endif()
 
@@ -251,7 +246,6 @@ if(OPENSSL_FOUND)
             ${GTEST_LIBRARIES}
             GTest::Main
             ${OPENSSL_TARGETS}
-            spdlog::spdlog
         )
     else()
         target_include_directories(test_manager PRIVATE ${OPENSSL_INCLUDES})
@@ -259,15 +253,13 @@ if(OPENSSL_FOUND)
             ${GTEST_LIBRARIES}
             GTest::Main
             ${OPENSSL_LIBS}
-            spdlog::spdlog
         )
     endif()
 else()
-    target_link_libraries(test_manager PRIVATE
-        ${GTEST_LIBRARIES}
-        GTest::Main
-        spdlog::spdlog
-    )
+        target_link_libraries(test_manager PRIVATE
+            ${GTEST_LIBRARIES}
+            GTest::Main
+        )
 endif()
 
 # 添加System测试可执行文件
@@ -302,7 +294,6 @@ if(OPENSSL_FOUND)
             ${GTEST_LIBRARIES}
             GTest::Main
             ${OPENSSL_TARGETS}
-            spdlog::spdlog
         )
     else()
         target_include_directories(test_system PRIVATE ${OPENSSL_INCLUDES})
@@ -310,14 +301,12 @@ if(OPENSSL_FOUND)
             ${GTEST_LIBRARIES}
             GTest::Main
             ${OPENSSL_LIBS}
-            spdlog::spdlog
         )
     endif()
 else()
     target_link_libraries(test_system PRIVATE
         ${GTEST_LIBRARIES}
         GTest::Main
-        spdlog::spdlog
     )
 endif()
 
@@ -351,7 +340,6 @@ if(OPENSSL_FOUND)
             GTest::Main
             ${OPENSSL_TARGETS}
             Threads::Threads
-            spdlog::spdlog
         )
     else()
         target_include_directories(test_concurrency PRIVATE ${OPENSSL_INCLUDES})
@@ -360,7 +348,6 @@ if(OPENSSL_FOUND)
             GTest::Main
             ${OPENSSL_LIBS}
             Threads::Threads
-            spdlog::spdlog
         )
     endif()
 else()
@@ -368,7 +355,6 @@ else()
         ${GTEST_LIBRARIES}
         GTest::Main
         Threads::Threads
-        spdlog::spdlog
     )
 endif()
 
@@ -414,7 +400,6 @@ if(OPENSSL_FOUND)
             ${GTEST_LIBRARIES}
             GTest::Main
             ${OPENSSL_TARGETS}
-            spdlog::spdlog
         )
     else()
         target_include_directories(test_integration PRIVATE ${OPENSSL_INCLUDES})
@@ -422,13 +407,11 @@ if(OPENSSL_FOUND)
             ${GTEST_LIBRARIES}
             GTest::Main
             ${OPENSSL_LIBS}
-            spdlog::spdlog
         )
     endif()
 else()
     target_link_libraries(test_integration PRIVATE
         ${GTEST_LIBRARIES}
         GTest::Main
-        spdlog::spdlog
     )
 endif() 

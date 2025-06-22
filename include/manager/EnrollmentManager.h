@@ -103,6 +103,14 @@ public:
      */
     bool saveData();
 
+    /**
+     * @brief 完全移除选课记录（主要用于测试）
+     * @param studentId 学生ID
+     * @param courseId 课程ID
+     * @return 是否成功移除
+     */
+    bool removeEnrollment(const std::string& studentId, const std::string& courseId);
+
 private:
     /**
      * @brief 私有构造函数，确保单例

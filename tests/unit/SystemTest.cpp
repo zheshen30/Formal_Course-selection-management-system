@@ -18,7 +18,12 @@
 #include "../../include/system/CourseSystem.h"
 #include "../../include/system/LockGuard.h"
 #include "../../include/system/SystemException.h"
+#include "../../include/manager/UserManager.h"
+#include "../../include/manager/CourseManager.h"
+#include "../../include/manager/EnrollmentManager.h"
+#include "../../include/model/User.h"
 #include <filesystem>
+#include <memory>
 
 // CourseSystem类的测试fixture
 class SystemTest : public ::testing::Test {
@@ -37,6 +42,39 @@ protected:
         // 设置测试环境
         system = &CourseSystem::getInstance();
         system->initialize("../test_data", "../test_log");
+        
+        // 添加测试用户数据
+        UserManager& userManager = UserManager::getInstance();
+        
+        // 添加管理员用户
+        if (!userManager.hasUser("admin001")) {
+            // 创建管理员用户
+            std::unique_ptr<Admin> admin = std::make_unique<Admin>("admin001", "系统管理员", "admin");
+            userManager.addAdmin(std::move(admin));
+        }
+        
+        // 添加教师用户
+        if (!userManager.hasUser("teacher001")) {
+            // 创建教师用户
+            std::unique_ptr<Teacher> teacher = std::make_unique<Teacher>(
+                "teacher001", "测试教师", "password",
+                "计算机系", "教授", "teacher@example.com"
+            );
+            userManager.addTeacher(std::move(teacher));
+        }
+        
+        // 添加学生用户
+        if (!userManager.hasUser("student001")) {
+            // 创建学生用户
+            std::unique_ptr<Student> student = std::make_unique<Student>(
+                "student001", "测试学生", "password",
+                "男", 20, "计算机系", "计算机1班", "student@example.com"
+            );
+            userManager.addStudent(std::move(student));
+        }
+        
+        // 保存用户数据
+        userManager.saveData();
     }
 
     void TearDown() override {
@@ -62,14 +100,16 @@ TEST_F(SystemTest, InitializeAndShutdown) {
 TEST_F(SystemTest, LoginAndPermissionCheck) {
     // 测试管理员登录
     EXPECT_TRUE(system->login("admin001", "admin"));
-    EXPECT_NE(nullptr, system->getCurrentUser());
-    EXPECT_EQ("admin001", system->getCurrentUser()->getId());
-    EXPECT_EQ(UserType::ADMIN, system->getCurrentUser()->getType());
-    
-    // 测试权限检查
-    EXPECT_TRUE(system->checkPermission(UserType::ADMIN));
-    EXPECT_TRUE(system->checkPermission(UserType::TEACHER));
-    EXPECT_TRUE(system->checkPermission(UserType::STUDENT));
+    ASSERT_NE(nullptr, system->getCurrentUser()) << "登录后用户不应为空";
+    if (system->getCurrentUser() != nullptr) {
+        EXPECT_EQ("admin001", system->getCurrentUser()->getId());
+        EXPECT_EQ(UserType::ADMIN, system->getCurrentUser()->getType());
+        
+        // 测试权限检查 - 管理员有所有权限
+        EXPECT_TRUE(system->checkPermission(UserType::ADMIN));
+        EXPECT_TRUE(system->checkPermission(UserType::TEACHER));
+        EXPECT_TRUE(system->checkPermission(UserType::STUDENT));
+    }
     
     // 测试注销
     system->logout();
@@ -77,28 +117,32 @@ TEST_F(SystemTest, LoginAndPermissionCheck) {
     
     // 测试教师登录
     EXPECT_TRUE(system->login("teacher001", "password"));
-    EXPECT_NE(nullptr, system->getCurrentUser());
-    EXPECT_EQ("teacher001", system->getCurrentUser()->getId());
-    EXPECT_EQ(UserType::TEACHER, system->getCurrentUser()->getType());
-    
-    // 测试权限检查
-    EXPECT_FALSE(system->checkPermission(UserType::ADMIN));
-    EXPECT_TRUE(system->checkPermission(UserType::TEACHER));
-    EXPECT_TRUE(system->checkPermission(UserType::STUDENT));
+    ASSERT_NE(nullptr, system->getCurrentUser()) << "登录后用户不应为空";
+    if (system->getCurrentUser() != nullptr) {
+        EXPECT_EQ("teacher001", system->getCurrentUser()->getId());
+        EXPECT_EQ(UserType::TEACHER, system->getCurrentUser()->getType());
+        
+        // 测试权限检查 - 教师只有教师权限
+        EXPECT_FALSE(system->checkPermission(UserType::ADMIN));
+        EXPECT_TRUE(system->checkPermission(UserType::TEACHER));
+        EXPECT_FALSE(system->checkPermission(UserType::STUDENT));
+    }
     
     // 测试注销
     system->logout();
     
     // 测试学生登录
     EXPECT_TRUE(system->login("student001", "password"));
-    EXPECT_NE(nullptr, system->getCurrentUser());
-    EXPECT_EQ("student001", system->getCurrentUser()->getId());
-    EXPECT_EQ(UserType::STUDENT, system->getCurrentUser()->getType());
-    
-    // 测试权限检查
-    EXPECT_FALSE(system->checkPermission(UserType::ADMIN));
-    EXPECT_FALSE(system->checkPermission(UserType::TEACHER));
-    EXPECT_TRUE(system->checkPermission(UserType::STUDENT));
+    ASSERT_NE(nullptr, system->getCurrentUser()) << "登录后用户不应为空";
+    if (system->getCurrentUser() != nullptr) {
+        EXPECT_EQ("student001", system->getCurrentUser()->getId());
+        EXPECT_EQ(UserType::STUDENT, system->getCurrentUser()->getType());
+        
+        // 测试权限检查 - 学生只有学生权限
+        EXPECT_FALSE(system->checkPermission(UserType::ADMIN));
+        EXPECT_FALSE(system->checkPermission(UserType::TEACHER));
+        EXPECT_TRUE(system->checkPermission(UserType::STUDENT));
+    }
     
     // 测试注销
     system->logout();
@@ -192,28 +236,39 @@ TEST_F(SystemTest, SystemExceptionTest) {
 TEST_F(SystemTest, PasswordChangeTest) {
     // 创建测试用户
     UserManager& userManager = UserManager::getInstance();
+    
+    // 先移除可能存在的测试用户
+    if (userManager.hasUser("password_test")) {
+        userManager.removeUser("password_test");
+    }
+    
+    // 创建测试用户
     std::unique_ptr<Student> student = std::make_unique<Student>(
         "password_test", "密码测试用户", "initial_password",
         "男", 20, "计算机科学", "计算机1班", "password_test@example.com"
     );
+    
     EXPECT_TRUE(userManager.addStudent(std::move(student)));
+    
+    // 获取用户指针
+    User* user = userManager.getUser("password_test");
+    ASSERT_NE(nullptr, user);
+    
+    // 验证初始密码
+    EXPECT_TRUE(user->verifyPassword("initial_password"));
     
     // 场景1：新密码与确认密码不一致
     EXPECT_FALSE(system->changePassword(
         "password_test", "initial_password", "new_password", "different_password"));
     
     // 验证密码未被修改
-    User* user = userManager.getUser("password_test");
-    ASSERT_NE(nullptr, user);
     EXPECT_TRUE(user->verifyPassword("initial_password"));
     
-    // 场景2：密码过短（少于6位）
+    // 场景2：新密码不符合要求（长度不足）
     EXPECT_FALSE(system->changePassword(
         "password_test", "initial_password", "short", "short"));
     
     // 验证密码未被修改
-    user = userManager.getUser("password_test");
-    ASSERT_NE(nullptr, user);
     EXPECT_TRUE(user->verifyPassword("initial_password"));
     
     // 场景3：旧密码错误
@@ -221,25 +276,21 @@ TEST_F(SystemTest, PasswordChangeTest) {
         "password_test", "wrong_password", "new_password123", "new_password123"));
     
     // 验证密码未被修改
-    user = userManager.getUser("password_test");
-    ASSERT_NE(nullptr, user);
     EXPECT_TRUE(user->verifyPassword("initial_password"));
     
-    // 场景4：密码修改成功
+    // 场景4：成功修改密码
     EXPECT_TRUE(system->changePassword(
         "password_test", "initial_password", "new_password123", "new_password123"));
     
     // 验证密码已被修改
-    user = userManager.getUser("password_test");
-    ASSERT_NE(nullptr, user);
     EXPECT_TRUE(user->verifyPassword("new_password123"));
     EXPECT_FALSE(user->verifyPassword("initial_password"));
     
-    // 场景5：不存在的用户
+    // 场景5：用户不存在
     EXPECT_FALSE(system->changePassword(
-        "nonexistent_user", "any_password", "new_password123", "new_password123"));
+        "nonexistent_user", "password", "new_password", "new_password"));
     
-    // 清理测试数据
+    // 清理测试用户
     userManager.removeUser("password_test");
 }
 

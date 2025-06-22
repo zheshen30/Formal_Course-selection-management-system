@@ -86,15 +86,33 @@ bool InputValidator::validateDouble(const std::string& input, double min, double
 }
 
 bool InputValidator::validateId(const std::string& id) {
-    // ID应为6-20位字母数字
-    std::regex pattern("^[a-zA-Z0-9]{6,20}$");
+    // ID应为字母、数字和下划线组合
+    std::regex pattern("^[a-zA-Z0-9_]{3,20}$");
     return std::regex_match(id, pattern);
 }
 
 bool InputValidator::validateName(const std::string& name) {
     // 姓名应为2-50位字符，不包含特殊字符
-    std::regex pattern("^[a-zA-Z0-9\\u4e00-\\u9fa5 ]{2,50}$");
-    return std::regex_match(name, pattern);
+    // 避免使用复杂的Unicode正则表达式
+    
+    // 检查长度
+    if (name.empty() || name.size() < 2 || name.size() > 50) {
+        return false;
+    }
+    
+    // 简单检查：允许字母、数字、空格和常见标点
+    for (char c : name) {
+        // 允许字母、数字、空格和一些常见标点（如 . , ' -）
+        if (!std::isalnum(c) && c != ' ' && c != '.' && c != ',' && c != '\'' && c != '-') {
+            // 简单处理：对于非ASCII字符，假设它们是有效的（如中文字符）
+            if (static_cast<unsigned char>(c) >= 128) {
+                continue;
+            }
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 bool InputValidator::validatePassword(const std::string& password) {

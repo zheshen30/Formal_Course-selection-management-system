@@ -167,7 +167,7 @@ else()
             set_source_files_properties(${SOURCE} PROPERTIES COMPILE_FLAGS "${USE_PCH_FLAG}${PCH_HEADER}")
         endforeach()
     elseif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-        # GCC和Clang使用-include选项
+         #GCC和Clang使用-include选项
         get_filename_component(PCH_FILENAME ${PCH_HEADER} NAME)
         set(PCH_BINARY "${CMAKE_CURRENT_BINARY_DIR}/${PCH_FILENAME}.gch")
         

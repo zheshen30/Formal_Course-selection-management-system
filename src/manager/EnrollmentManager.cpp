@@ -22,7 +22,7 @@
 #include "../../include/system/SystemException.h"
 #include "../../include/util/Logger.h"
 
-#include <json.hpp>
+#include "../../nlohmann/json.hpp"
 #include <algorithm>
 #include <stdexcept>
 #include <sstream>
@@ -70,7 +70,7 @@ bool EnrollmentManager::enrollCourse(const std::string& studentId, const std::st
             throw SystemException(ErrorType::COURSE_FULL, "课程已满");
         }
         
-        // 创建选课记录并添加
+        // 创建选课记录并添加到数据库
         auto enrollment = std::make_unique<Enrollment>(studentId, courseId);
         bool enrollmentAdded = addEnrollment(std::move(enrollment));
         
@@ -83,7 +83,11 @@ bool EnrollmentManager::enrollCourse(const std::string& studentId, const std::st
         bool studentAdded = course->addStudent(studentId);
         if (!studentAdded) {
             // 如果学生添加失败，回滚选课记录
-            enrollments_.erase(generateKey(studentId, courseId));
+            std::string key = generateKey(studentId, courseId);
+            LockGuard lock(mutex_, 5000);
+            if (lock.isLocked()) {
+                enrollments_.erase(key);
+            }
             Logger::getInstance().error("选课失败：无法将学生添加到课程");
             return false;
         }
@@ -129,6 +133,7 @@ bool EnrollmentManager::dropCourse(const std::string& studentId, const std::stri
         bool removed = course->removeStudent(studentId);
         if (!removed) {
             Logger::getInstance().warning("退课警告：无法从课程 " + courseId + " 中移除学生 " + studentId);
+            // 继续处理，不返回失败，因为选课记录状态已更新
         }
         
         Logger::getInstance().info("退课成功：学生 " + studentId + " 退出课程 " + courseId);
@@ -362,4 +367,29 @@ bool EnrollmentManager::saveData() {
         Logger::getInstance().error("保存选课数据失败：" + std::string(e.what()));
         throw SystemException(ErrorType::OPERATION_FAILED, "保存选课数据失败：" + std::string(e.what()));
     }
+}
+
+bool EnrollmentManager::removeEnrollment(const std::string& studentId, const std::string& courseId) {
+    if (studentId.empty() || courseId.empty()) {
+        Logger::getInstance().warning("移除选课记录失败：学生ID或课程ID为空");
+        return false;
+    }
+    
+    LockGuard lock(mutex_, 5000); // 设置5秒超时
+    if (!lock.isLocked()) {
+        throw SystemException(ErrorType::LOCK_TIMEOUT, "获取选课管理器锁超时");
+    }
+    
+    std::string key = generateKey(studentId, courseId);
+    auto it = enrollments_.find(key);
+    
+    if (it == enrollments_.end()) {
+        // 记录不存在，视为移除成功
+        return true;
+    }
+    
+    // 从哈希表中移除记录
+    enrollments_.erase(it);
+    Logger::getInstance().info("成功移除选课记录：学生 " + studentId + " 和课程 " + courseId);
+    return true;
 }

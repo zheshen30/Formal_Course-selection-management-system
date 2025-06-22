@@ -20,7 +20,7 @@
 #include "../../include/system/SystemException.h"
 #include "../../include/util/Logger.h"
 
-#include <json.hpp>
+#include "../../nlohmann/json.hpp"
 #include <algorithm>
 #include <vector>
 #include <stdexcept>
@@ -278,60 +278,65 @@ bool UserManager::loadData() {
 
 bool UserManager::saveData() {
     try {
-        LockGuard lock(mutex_, 5000); // 设置5秒超时
-        if (!lock.isLocked()) {
-            throw SystemException(ErrorType::LOCK_TIMEOUT, "获取用户管理器锁超时");
-        }
-        
         json usersJson = json::array();
+        std::string jsonStr;
         
-        for (const auto& pair : users_) {
-            const User* user = pair.second.get();
-            json userJson;
-            
-            // 通用属性
-            userJson["id"] = user->getId();
-            userJson["name"] = user->getName();
-            userJson["password"] = user->password_;
-            userJson["salt"] = user->salt_;
-            
-            switch (user->getType()) {
-                case UserType::STUDENT: {
-                    const Student* student = static_cast<const Student*>(user);
-                    userJson["type"] = "STUDENT";
-                    userJson["gender"] = student->getGender();
-                    userJson["age"] = student->getAge();
-                    userJson["department"] = student->getDepartment();
-                    userJson["classInfo"] = student->getClassInfo();
-                    userJson["contact"] = student->getContact();
-                    break;
-                }
-                case UserType::TEACHER: {
-                    const Teacher* teacher = static_cast<const Teacher*>(user);
-                    userJson["type"] = "TEACHER";
-                    userJson["department"] = teacher->getDepartment();
-                    userJson["title"] = teacher->getTitle();
-                    userJson["contact"] = teacher->getContact();
-                    break;
-                }
-                case UserType::ADMIN:
-                    userJson["type"] = "ADMIN";
-                    break;
-                default:
-                    Logger::getInstance().warning("未知的用户类型：" + std::to_string(static_cast<int>(user->getType())));
-                    continue;
+        // 第一阶段：在锁的保护下收集用户数据
+        {
+            LockGuard lock(mutex_, 3000); // 减少超时时间
+            if (!lock.isLocked()) {
+                throw SystemException(ErrorType::LOCK_TIMEOUT, "获取用户管理器锁超时");
             }
             
-            usersJson.push_back(userJson);
-        }
+            for (const auto& pair : users_) {
+                const User* user = pair.second.get();
+                json userJson;
+                
+                // 通用属性
+                userJson["id"] = user->getId();
+                userJson["name"] = user->getName();
+                userJson["password"] = user->password_;
+                userJson["salt"] = user->salt_;
+                
+                switch (user->getType()) {
+                    case UserType::STUDENT: {
+                        const Student* student = static_cast<const Student*>(user);
+                        userJson["type"] = "STUDENT";
+                        userJson["gender"] = student->getGender();
+                        userJson["age"] = student->getAge();
+                        userJson["department"] = student->getDepartment();
+                        userJson["classInfo"] = student->getClassInfo();
+                        userJson["contact"] = student->getContact();
+                        break;
+                    }
+                    case UserType::TEACHER: {
+                        const Teacher* teacher = static_cast<const Teacher*>(user);
+                        userJson["type"] = "TEACHER";
+                        userJson["department"] = teacher->getDepartment();
+                        userJson["title"] = teacher->getTitle();
+                        userJson["contact"] = teacher->getContact();
+                        break;
+                    }
+                    case UserType::ADMIN:
+                        userJson["type"] = "ADMIN";
+                        break;
+                    default:
+                        Logger::getInstance().warning("未知的用户类型：" + std::to_string(static_cast<int>(user->getType())));
+                        continue;
+                }
+                
+                usersJson.push_back(userJson);
+            }
+            
+            jsonStr = usersJson.dump(4); // 格式化JSON，缩进4个空格
+        } // 锁在这里释放
         
-        std::string jsonStr = usersJson.dump(4); // 格式化JSON，缩进4个空格
-        
+        // 第二阶段：在锁释放后保存数据到文件
         DataManager& dataManager = DataManager::getInstance();
         bool result = dataManager.saveJsonToFile("users.json", jsonStr);
         
         if (result) {
-            Logger::getInstance().info("成功保存用户数据，共 " + std::to_string(users_.size()) + " 个用户");
+            Logger::getInstance().info("成功保存用户数据，共 " + std::to_string(usersJson.size()) + " 个用户");
         } else {
             Logger::getInstance().error("保存用户数据失败");
         }
@@ -408,31 +413,45 @@ bool UserManager::hasUser(const std::string& userId) const {
 }
 
 bool UserManager::changeUserPassword(const std::string& userId, const std::string& oldPassword, const std::string& newPassword) {
-    LockGuard lock(mutex_, 5000); // 设置5秒超时
-    if (!lock.isLocked()) {
-        throw SystemException(ErrorType::LOCK_TIMEOUT, "获取用户管理器锁超时");
+    User* user = nullptr;
+    
+    // 第一阶段：验证用户和密码，修改密码
+    {
+        LockGuard lock(mutex_, 5000); // 设置5秒超时
+        if (!lock.isLocked()) {
+            throw SystemException(ErrorType::LOCK_TIMEOUT, "获取用户管理器锁超时");
+        }
+        
+        auto it = users_.find(userId);
+        if (it == users_.end()) {
+            Logger::getInstance().warning("修改密码失败：用户ID " + userId + " 不存在");
+            return false;
+        }
+        
+        user = it->second.get();
+        if (!user->verifyPassword(oldPassword)) {
+            Logger::getInstance().warning("修改密码失败：用户 " + userId + " 旧密码验证错误");
+            return false;
+        }
+        
+        // 设置新密码，内部会生成新的盐值和哈希
+        user->setPassword(newPassword);
     }
     
-    auto it = users_.find(userId);
-    if (it == users_.end()) {
-        Logger::getInstance().warning("修改密码失败：用户ID " + userId + " 不存在");
-        return false;
+    // 第二阶段：保存更改到文件（不在同一个锁范围内）
+    try {
+        bool saveResult = this->saveData();
+        if (!saveResult) {
+            Logger::getInstance().error("用户 " + userId + " 密码修改成功，但保存失败");
+            return false;
+        }
+        
+        Logger::getInstance().info("用户 " + userId + " 密码修改成功");
+        return true;
+    } catch (const SystemException& e) {
+        Logger::getInstance().error("用户 " + userId + " 密码修改成功，但保存时出现异常：" + e.what());
+        throw; // 重新抛出异常
     }
-    
-    User* user = it->second.get();
-    if (!user->verifyPassword(oldPassword)) {
-        Logger::getInstance().warning("修改密码失败：用户 " + userId + " 旧密码验证错误");
-        return false;
-    }
-    
-    // 设置新密码，内部会生成新的盐值和哈希
-    user->setPassword(newPassword);
-    
-    // 保存更改到文件
-    this->saveData();
-    
-    Logger::getInstance().info("用户 " + userId + " 密码修改成功");
-    return true;
 }
 
 std::vector<std::string> UserManager::findUsers(const std::function<bool(const User&)>& predicate) const {

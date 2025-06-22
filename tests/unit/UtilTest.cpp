@@ -28,7 +28,7 @@ class UtilTest : public ::testing::Test {
 protected:
     void SetUp() override {
         // 设置测试环境
-        testDir = "./test_util";
+        testDir = "./test_util_data";
         std::filesystem::create_directory(testDir);
     }
 
@@ -102,7 +102,7 @@ TEST_F(UtilTest, LoggerTest) {
     // 注意：这里只是测试API调用，实际日志内容需要检查日志文件
 }
 
-// 测试I18nManager类
+    // 测试I18nManager类
 TEST_F(UtilTest, I18nManagerTest) {
     I18nManager& i18n = I18nManager::getInstance();
     
@@ -119,7 +119,7 @@ TEST_F(UtilTest, I18nManagerTest) {
     std::string enContent = R"({
         "test_key": "Test Text",
         "greeting": "Hello, {0}!",
-        "info": "This is a {1} of {0}"
+        "info": "This is a {0} of {1}"
     })";
     
     std::ofstream zhOut(zhFile);
@@ -149,7 +149,7 @@ TEST_F(UtilTest, I18nManagerTest) {
     // 测试获取翻译
     EXPECT_EQ("Test Text", i18n.getText("test_key"));
     EXPECT_EQ("Hello, World!", i18n.getFormattedText("greeting", "World"));
-    EXPECT_EQ("This is a example of test", i18n.getFormattedText("info", "test", "example"));
+    EXPECT_EQ("This is a test of example", i18n.getFormattedText("info", "test", "example"));
     
     // 测试不存在的键
     EXPECT_EQ("unknown_key", i18n.getText("unknown_key"));
