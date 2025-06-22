@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2025 哲神
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 #include "../../include/system/CourseSystem.h"
 #include "../../include/util/DataManager.h"
 #include "../../include/system/SystemException.h"
@@ -262,7 +278,7 @@ void CourseSystem::showWelcome() const {
     std::cout << std::endl;
 }
 
-void CourseSystem::showMainMenu() const {
+void CourseSystem::showMainMenu() {
     std::cout << getText("main_menu_title") << std::endl;
     std::cout << "1. " << getText("login") << std::endl;
     std::cout << "2. " << getText("exit") << std::endl;
@@ -300,7 +316,7 @@ void CourseSystem::showMainMenu() const {
     }
 }
 
-void CourseSystem::showAdminMenu() const {
+void CourseSystem::showAdminMenu() {
     std::cout << getText("admin_menu_title") << std::endl;
     std::cout << "1. " << getText("user_management") << std::endl;
     std::cout << "2. " << getText("course_management") << std::endl;
@@ -328,7 +344,7 @@ void CourseSystem::showAdminMenu() const {
     }
 }
 
-void CourseSystem::showTeacherMenu() const {
+void CourseSystem::showTeacherMenu() {
     std::cout << getText("teacher_menu_title") << std::endl;
     std::cout << "1. " << getText("view_courses") << std::endl;
     std::cout << "2. " << getText("view_students") << std::endl;
@@ -355,7 +371,7 @@ void CourseSystem::showTeacherMenu() const {
     }
 }
 
-void CourseSystem::showStudentMenu() const {
+void CourseSystem::showStudentMenu() {
     std::cout << getText("student_menu_title") << std::endl;
     std::cout << "1. " << getText("query_courses") << std::endl;
     std::cout << "2. " << getText("select_course") << std::endl;

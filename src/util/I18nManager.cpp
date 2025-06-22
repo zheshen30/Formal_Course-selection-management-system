@@ -1,11 +1,27 @@
+/*
+ * Copyright (C) 2025 哲神
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 #include "../../include/util/I18nManager.h"
 #include "../../include/util/DataManager.h"
 #include "../../include/system/LockGuard.h"
 #include "../../include/system/SystemException.h"
 #include "../../include/util/Logger.h"
 
-#include <nlohmann/json.hpp>
-#include <fmt/format.h>
+#include <json.hpp>
+#include <spdlog/fmt/fmt.h>
 #include <stdexcept>
 #include <fstream>
 
@@ -16,7 +32,7 @@ I18nManager& I18nManager::getInstance() {
     return instance;
 }
 
-I18nManager::I18nManager() : initialized_(false), currentLanguage_(Language::CHINESE) {
+I18nManager::I18nManager() : currentLanguage_(Language::CHINESE), initialized_(false) {
 }
 
 bool I18nManager::initialize(const std::string& dataDir) {
@@ -150,8 +166,12 @@ std::string I18nManager::getLanguageFilePath(Language language) const {
 template std::string I18nManager::getFormattedText(const std::string& key, int) const;
 template std::string I18nManager::getFormattedText(const std::string& key, double) const;
 template std::string I18nManager::getFormattedText(const std::string& key, const std::string&) const;
+template std::string I18nManager::getFormattedText(const std::string& key, std::string) const;
 template std::string I18nManager::getFormattedText(const std::string& key, const char*) const;
 template std::string I18nManager::getFormattedText(const std::string& key, int, int) const;
 template std::string I18nManager::getFormattedText(const std::string& key, const std::string&, const std::string&) const;
+template std::string I18nManager::getFormattedText(const std::string& key, std::string, std::string) const;
 template std::string I18nManager::getFormattedText(const std::string& key, const std::string&, int) const;
 template std::string I18nManager::getFormattedText(const std::string& key, int, const std::string&) const;
+// 添加缺失的模板实例化
+template std::string I18nManager::getFormattedText(const std::string& key, const char*, const char*) const;

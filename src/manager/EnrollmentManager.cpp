@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2025 哲神
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 #include "../../include/manager/EnrollmentManager.h"
 #include "../../include/manager/UserManager.h"
 #include "../../include/manager/CourseManager.h"
@@ -6,7 +22,7 @@
 #include "../../include/system/SystemException.h"
 #include "../../include/util/Logger.h"
 
-#include <nlohmann/json.hpp>
+#include <json.hpp>
 #include <algorithm>
 #include <stdexcept>
 #include <sstream>
@@ -275,7 +291,7 @@ bool EnrollmentManager::loadData() {
             }
             
             auto enrollment = std::make_unique<Enrollment>(studentId, courseId, status);
-            enrollment->enrollmentTime_ = enrollmentTime; // 直接设置时间，避免使用当前时间
+            enrollment->setEnrollmentTime(enrollmentTime); // 设置时间，避免使用当前时间
             
             std::string key = generateKey(studentId, courseId);
             enrollments_[key] = std::move(enrollment);

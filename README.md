@@ -71,17 +71,6 @@
    ./course_system
    ```
 
-### 使用构建脚本
-
-1. 确保已安装所有依赖库
-2. 执行构建脚本
-   ```
-   ./build_script.sh
-   ```
-3. 运行程序
-   ```
-   ./build/course_system
-   ```
 
 ## 默认用户账号
 
@@ -138,8 +127,23 @@ project/
 
 ## 开发者
 
-- 开发者名称
+- 哲神
 
 ## 许可证
 
-本项目采用MIT许可证
+本项目采用GNU通用公共许可证第3版(GPLv3)
+
+Copyright (C) 2025 哲神
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.

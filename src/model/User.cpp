@@ -1,13 +1,38 @@
+/*
+ * Copyright (C) 2025 哲神
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 #include "../../include/model/User.h"
 #include "../../include/system/SystemException.h"
 
-#include <openssl/sha.h>
-#include <openssl/rand.h>
+// 根据编译配置选择是否使用OpenSSL
+#ifndef NO_OPENSSL
+  #ifdef HAVE_OPENSSL
+    #include <openssl/sha.h>
+    #include <openssl/rand.h>
+    #include <openssl/evp.h>
+    #include <openssl/opensslv.h> // 用于版本检查
+  #endif
+#endif
+
 #include <sstream>
 #include <iomanip>
 #include <random>
 #include <algorithm>
 #include <utility>
+#include <functional> // 用于std::hash
 
 // User 类实现
 User::User(std::string id, std::string name, std::string password)
@@ -46,12 +71,41 @@ std::string User::generatePasswordHash(const std::string& password, const std::s
     // 将密码和盐值拼接
     std::string combined = password + salt;
     
-    // 计算 SHA-256 哈希
+    #if !defined(NO_OPENSSL) && defined(HAVE_OPENSSL)
+    // OpenSSL 3.0 实现 - 使用EVP API代替废弃的SHA256_*函数
     unsigned char hash[SHA256_DIGEST_LENGTH];
+    
+    #if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    // 使用OpenSSL 3.0推荐的EVP接口
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if (mdctx == NULL) {
+        throw SystemException(ErrorType::OPERATION_FAILED, "OpenSSL错误：无法创建EVP_MD_CTX");
+    }
+    
+    if (EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL) != 1) {
+        EVP_MD_CTX_free(mdctx);
+        throw SystemException(ErrorType::OPERATION_FAILED, "OpenSSL错误：无法初始化摘要");
+    }
+    
+    if (EVP_DigestUpdate(mdctx, combined.c_str(), combined.length()) != 1) {
+        EVP_MD_CTX_free(mdctx);
+        throw SystemException(ErrorType::OPERATION_FAILED, "OpenSSL错误：无法更新摘要");
+    }
+    
+    unsigned int hash_len = SHA256_DIGEST_LENGTH;
+    if (EVP_DigestFinal_ex(mdctx, hash, &hash_len) != 1) {
+        EVP_MD_CTX_free(mdctx);
+        throw SystemException(ErrorType::OPERATION_FAILED, "OpenSSL错误：无法完成摘要");
+    }
+    
+    EVP_MD_CTX_free(mdctx);
+    #else
+    // 旧版OpenSSL使用SHA256接口
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
     SHA256_Update(&sha256, combined.c_str(), combined.length());
     SHA256_Final(hash, &sha256);
+    #endif
     
     // 将哈希转换为十六进制字符串
     std::stringstream ss;
@@ -60,6 +114,26 @@ std::string User::generatePasswordHash(const std::string& password, const std::s
     }
     
     return ss.str();
+    
+    #else
+    // 备用实现 - 使用C++标准库的哈希函数
+    // 注意：这不是加密安全的，仅在无法使用OpenSSL时作为备用方案
+    
+    // 使用多个哈希组合增强安全性
+    std::size_t hash1 = std::hash<std::string>{}(combined);
+    std::size_t hash2 = std::hash<std::string>{}(combined + "extra_salt1");
+    std::size_t hash3 = std::hash<std::string>{}(combined + "extra_salt2");
+    std::size_t hash4 = std::hash<std::string>{}(combined + "extra_salt3");
+    
+    // 组合哈希值
+    std::stringstream ss;
+    ss << std::hex << std::setw(16) << std::setfill('0') << hash1;
+    ss << std::hex << std::setw(16) << std::setfill('0') << hash2;
+    ss << std::hex << std::setw(16) << std::setfill('0') << hash3;
+    ss << std::hex << std::setw(16) << std::setfill('0') << hash4;
+    
+    return ss.str();
+    #endif
 }
 
 std::string User::generateSalt() {

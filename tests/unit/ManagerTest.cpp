@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2025 哲神
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 #include <gtest/gtest.h>
 #include <memory>
 #include "../../include/manager/UserManager.h"
@@ -30,7 +46,7 @@ TEST_F(ManagerTest, UserManagerBasicFunctions) {
     );
     
     // 添加用户
-    EXPECT_TRUE(userManager.addUser(std::move(student)));
+    EXPECT_TRUE(userManager.addStudent(std::move(student)));
     
     // 获取用户
     User* user = userManager.getUser("test_student");
@@ -40,8 +56,8 @@ TEST_F(ManagerTest, UserManagerBasicFunctions) {
     EXPECT_EQ(UserType::STUDENT, user->getType());
     
     // 验证密码
-    EXPECT_TRUE(userManager.verifyPassword("test_student", "password"));
-    EXPECT_FALSE(userManager.verifyPassword("test_student", "wrong_password"));
+    EXPECT_TRUE(user->verifyPassword("password"));
+    EXPECT_FALSE(user->verifyPassword("wrong_password"));
     
     // 获取不存在的用户
     EXPECT_EQ(nullptr, userManager.getUser("non_existent_user"));
@@ -91,7 +107,7 @@ TEST_F(ManagerTest, EnrollmentManagerBasicFunctions) {
         "test_student", "测试学生", "password",
         "男", 20, "计算机科学", "计算机1班", "test@example.com"
     );
-    userManager.addUser(std::move(student));
+    userManager.addStudent(std::move(student));
     
     std::unique_ptr<Course> course = std::make_unique<Course>(
         "TEST101", "测试课程", CourseType::REQUIRED,
@@ -139,13 +155,13 @@ TEST_F(ManagerTest, ManagerQueryFunctions) {
         "student001", "学生1", "password",
         "男", 20, "计算机科学", "计算机1班", "student1@example.com"
     );
-    userManager.addUser(std::move(student1));
+    userManager.addStudent(std::move(student1));
     
     std::unique_ptr<Student> student2 = std::make_unique<Student>(
         "student002", "学生2", "password",
         "女", 21, "计算机科学", "计算机2班", "student2@example.com"
     );
-    userManager.addUser(std::move(student2));
+    userManager.addStudent(std::move(student2));
     
     // 创建多个测试课程
     std::unique_ptr<Course> course1 = std::make_unique<Course>(
@@ -161,7 +177,7 @@ TEST_F(ManagerTest, ManagerQueryFunctions) {
     courseManager.addCourse(std::move(course2));
     
     // 测试UserManager查询功能
-    std::vector<User*> computerStudents = userManager.findUsers(
+    std::vector<std::string> computerStudentIds = userManager.findUsers(
         [](const User& user) {
             if (user.getType() == UserType::STUDENT) {
                 const Student& student = static_cast<const Student&>(user);
@@ -170,15 +186,15 @@ TEST_F(ManagerTest, ManagerQueryFunctions) {
             return false;
         }
     );
-    EXPECT_EQ(2, computerStudents.size());
+    EXPECT_EQ(2, computerStudentIds.size());
     
     // 测试CourseManager查询功能
-    std::vector<Course*> requiredCourses = courseManager.findCourses(
+    std::vector<std::string> requiredCourseIds = courseManager.findCourses(
         [](const Course& course) {
             return course.getType() == CourseType::REQUIRED;
         }
     );
-    EXPECT_EQ(2, requiredCourses.size());
+    EXPECT_EQ(2, requiredCourseIds.size());
     
     // 清理测试数据
     userManager.removeUser("student001");

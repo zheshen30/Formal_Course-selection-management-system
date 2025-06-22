@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2025 哲神
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 #pragma once
 
 #include <string>
@@ -71,6 +87,12 @@ public:
      * @param status 新的选课状态
      */
     void setStatus(EnrollmentStatus status) { status_ = status; }
+    
+    /**
+     * @brief 设置选课时间
+     * @param time 选课时间
+     */
+    void setEnrollmentTime(const std::string& time) { enrollmentTime_ = time; }
     
     /**
      * @brief 获取选课状态的字符串表示

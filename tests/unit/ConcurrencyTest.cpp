@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2025 哲神
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 #include <gtest/gtest.h>
 #include <thread>
 #include <vector>
@@ -30,7 +46,7 @@ protected:
     
     void setupTestData() {
         // 创建测试用户
-        userManager.addUser(std::make_unique<Student>(
+        userManager.addStudent(std::make_unique<Student>(
             "test_student", "测试学生", "password",
             "男", 20, "计算机科学", "计算机1班", "student@test.com"
         ));
@@ -212,7 +228,7 @@ TEST_F(ConcurrencyTest, ConcurrentEnrollmentTest) {
     // 创建多个学生
     for (int i = 0; i < numStudents; ++i) {
         std::string studentId = "student" + std::to_string(i);
-        userManager.addUser(std::make_unique<Student>(
+        userManager.addStudent(std::make_unique<Student>(
             studentId, "学生" + std::to_string(i), "password",
             "男", 20, "计算机科学", "计算机1班", studentId + "@test.com"
         ));

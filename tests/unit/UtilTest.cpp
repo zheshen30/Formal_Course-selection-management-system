@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2025 哲神
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 #include <gtest/gtest.h>
 #include "../../include/util/DataManager.h"
 #include "../../include/util/Logger.h"
@@ -141,39 +157,45 @@ TEST_F(UtilTest, I18nManagerTest) {
 
 // 测试InputValidator类
 TEST_F(UtilTest, InputValidatorTest) {
-    InputValidator& validator = InputValidator::getInstance();
-    
     // 测试ID验证
-    EXPECT_TRUE(validator.validateId("user123"));
-    EXPECT_TRUE(validator.validateId("USER_123"));
-    EXPECT_FALSE(validator.validateId("user 123"));  // 包含空格
-    EXPECT_FALSE(validator.validateId("user@123"));  // 包含特殊字符
-    EXPECT_FALSE(validator.validateId(""));          // 空字符串
+    EXPECT_TRUE(InputValidator::validateId("user123"));
+    EXPECT_TRUE(InputValidator::validateId("USER_123"));
+    EXPECT_FALSE(InputValidator::validateId("user 123"));  // 包含空格
+    EXPECT_FALSE(InputValidator::validateId("user@123"));  // 包含特殊字符
+    EXPECT_FALSE(InputValidator::validateId(""));          // 空字符串
     
     // 测试名称验证
-    EXPECT_TRUE(validator.validateName("张三"));
-    EXPECT_TRUE(validator.validateName("John Doe"));
-    EXPECT_FALSE(validator.validateName(""));        // 空字符串
+    EXPECT_TRUE(InputValidator::validateName("张三"));
+    EXPECT_TRUE(InputValidator::validateName("John Doe"));
+    EXPECT_FALSE(InputValidator::validateName(""));        // 空字符串
     
     // 测试密码验证
-    EXPECT_TRUE(validator.validatePassword("password123"));
-    EXPECT_TRUE(validator.validatePassword("P@ssw0rd"));
-    EXPECT_FALSE(validator.validatePassword("123"));  // 太短
-    EXPECT_FALSE(validator.validatePassword(""));     // 空字符串
+    EXPECT_TRUE(InputValidator::validatePassword("password123"));
+    EXPECT_TRUE(InputValidator::validatePassword("P@ssw0rd"));
+    EXPECT_FALSE(InputValidator::validatePassword("123"));  // 太短
+    EXPECT_FALSE(InputValidator::validatePassword(""));     // 空字符串
     
-    // 测试数字验证
-    EXPECT_TRUE(validator.validateNumber("123"));
-    EXPECT_TRUE(validator.validateNumber("0"));
-    EXPECT_TRUE(validator.validateNumber("-123"));
-    EXPECT_FALSE(validator.validateNumber("12a3"));   // 包含字母
-    EXPECT_FALSE(validator.validateNumber(""));       // 空字符串
+    // 测试整数验证
+    int value;
+    EXPECT_TRUE(InputValidator::validateInteger("123", std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), value));
+    EXPECT_EQ(value, 123);
+    EXPECT_TRUE(InputValidator::validateInteger("0", std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), value));
+    EXPECT_EQ(value, 0);
+    EXPECT_TRUE(InputValidator::validateInteger("-123", std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), value));
+    EXPECT_EQ(value, -123);
+    EXPECT_FALSE(InputValidator::validateInteger("12a3", std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), value));
+    EXPECT_FALSE(InputValidator::validateInteger("", std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), value));
     
     // 测试浮点数验证
-    EXPECT_TRUE(validator.validateFloat("123.45"));
-    EXPECT_TRUE(validator.validateFloat("0.0"));
-    EXPECT_TRUE(validator.validateFloat("-123.45"));
-    EXPECT_FALSE(validator.validateFloat("12a3.45")); // 包含字母
-    EXPECT_FALSE(validator.validateFloat(""));        // 空字符串
+    double dvalue;
+    EXPECT_TRUE(InputValidator::validateDouble("123.45", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), dvalue));
+    EXPECT_DOUBLE_EQ(dvalue, 123.45);
+    EXPECT_TRUE(InputValidator::validateDouble("0.0", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), dvalue));
+    EXPECT_DOUBLE_EQ(dvalue, 0.0);
+    EXPECT_TRUE(InputValidator::validateDouble("-123.45", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), dvalue));
+    EXPECT_DOUBLE_EQ(dvalue, -123.45);
+    EXPECT_FALSE(InputValidator::validateDouble("12a3.45", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), dvalue));
+    EXPECT_FALSE(InputValidator::validateDouble("", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), dvalue));
 }
 
 int main(int argc, char **argv) {

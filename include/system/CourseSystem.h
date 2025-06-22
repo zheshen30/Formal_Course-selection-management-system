@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2025 哲神
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 #pragma once
 
 #include "../model/User.h"
@@ -130,22 +146,22 @@ private:
     /**
      * @brief 显示主菜单
      */
-    void showMainMenu() const;
+    void showMainMenu();
     
     /**
      * @brief 显示管理员菜单
      */
-    void showAdminMenu() const;
+    void showAdminMenu();
     
     /**
      * @brief 显示教师菜单
      */
-    void showTeacherMenu() const;
+    void showTeacherMenu();
     
     /**
      * @brief 显示学生菜单
      */
-    void showStudentMenu() const;
+    void showStudentMenu();
     
     /**
      * @brief 处理管理员功能

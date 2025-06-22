@@ -1,5 +1,22 @@
+/*
+ * Copyright (C) 2025 哲神
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 #include "../../include/util/DataManager.h"
 #include "../../include/system/SystemException.h"
+#include "../../include/system/LockGuard.h"
 #include "../../include/util/Logger.h"
 
 #include <fstream>
@@ -47,7 +64,7 @@ std::string DataManager::loadJsonFromFile(const std::string& filename) {
         throw; // 重新抛出系统异常
     } catch (const std::exception& e) {
         Logger::getInstance().error("加载文件失败: " + filePath + " - " + e.what());
-        throw SystemException(ErrorType::FILE_CORRUPTED, "加载文件失败: " + e.what());
+        throw SystemException(ErrorType::FILE_CORRUPTED, std::string("加载文件失败: ") + e.what());
     }
 }
 
@@ -67,7 +84,7 @@ bool DataManager::saveJsonToFile(const std::string& filename, const std::string&
             fs::create_directories(parentPath);
         } catch (const std::exception& e) {
             Logger::getInstance().error("创建目录失败: " + parentPath.string() + " - " + e.what());
-            throw SystemException(ErrorType::FILE_ACCESS_DENIED, "创建目录失败: " + e.what());
+            throw SystemException(ErrorType::FILE_ACCESS_DENIED, std::string("创建目录失败: ") + e.what());
         }
     }
     
@@ -95,8 +112,8 @@ bool DataManager::saveJsonToFile(const std::string& filename, const std::string&
             }
             fs::rename(tempFilePath, filePath);
         } catch (const std::exception& e) {
-            Logger::getInstance().error("重命名临时文件失败: " + e.what());
-            throw SystemException(ErrorType::FILE_ACCESS_DENIED, "重命名临时文件失败: " + e.what());
+            Logger::getInstance().error(std::string("重命名临时文件失败: ") + e.what());
+            throw SystemException(ErrorType::FILE_ACCESS_DENIED, std::string("重命名临时文件失败: ") + e.what());
         }
         
         Logger::getInstance().info("成功保存文件: " + filePath);
@@ -105,8 +122,10 @@ bool DataManager::saveJsonToFile(const std::string& filename, const std::string&
         throw; // 重新抛出系统异常
     } catch (const std::exception& e) {
         Logger::getInstance().error("保存文件失败: " + filePath + " - " + e.what());
-        throw SystemException(ErrorType::FILE_ACCESS_DENIED, "保存文件失败: " + e.what());
+        throw SystemException(ErrorType::FILE_ACCESS_DENIED, std::string("保存文件失败: ") + e.what());
     }
+    
+    return true;  // 添加返回语句，避免警告
 }
 
 bool DataManager::fileExists(const std::string& filename) const {

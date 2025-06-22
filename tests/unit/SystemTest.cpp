@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2025 哲神
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 #include <gtest/gtest.h>
 #include "../../include/system/CourseSystem.h"
 #include "../../include/system/LockGuard.h"
@@ -148,16 +164,16 @@ TEST_F(SystemTest, SystemExceptionTest) {
     
     // 验证异常信息
     EXPECT_EQ(ErrorType::DATA_NOT_FOUND, ex.getType());
-    EXPECT_EQ("测试异常", ex.getMessage());
-    EXPECT_EQ(404, ex.getCode());
+    EXPECT_STREQ("测试异常", ex.what());
+    EXPECT_EQ(404, ex.getErrorCode());
     
     // 测试异常抛出和捕获
     try {
         throw SystemException(ErrorType::PERMISSION_DENIED, "权限不足", 403);
     } catch (const SystemException& e) {
         EXPECT_EQ(ErrorType::PERMISSION_DENIED, e.getType());
-        EXPECT_EQ("权限不足", e.getMessage());
-        EXPECT_EQ(403, e.getCode());
+        EXPECT_STREQ("权限不足", e.what());
+        EXPECT_EQ(403, e.getErrorCode());
     }
 }
 
