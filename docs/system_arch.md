@@ -7,7 +7,7 @@
   - [系统架构图](#系统架构图)
 - [总体架构](#总体架构)
 - [核心组件](#核心组件)
-  - [CourseSystem模块化设计](#coursesystem模块化设计)
+  - [CourseSystem模块化设计（还未实现模块化设计）](#coursesystem模块化设计)
   - [数据模型](#数据模型)
   - [辅助系统](#辅助系统)
 - [设计模式应用](#设计模式应用)
@@ -290,25 +290,17 @@ end
 1. **互斥锁（Mutex）**
    - 使用std::mutex保护共享资源
    - 数据访问时加锁，确保线程安全
-
 2. **锁序策略**
    - 定义固定的锁获取顺序，防止死锁
-
 3. **原子操作**
    - 使用std::atomic类型处理计数器等简单共享数据
    - 减少锁的使用，提高并发性能
-
 4. **细粒度锁**
    - 每个管理器和关键组件都有自己的互斥锁，避免全局锁导致的性能瓶颈
-
 5. **读写锁分离**
    - 对于读多写少的场景，使用std::shared_mutex实现读写锁分离，提高并发性能
-
 6. **RAII锁管理**
    - 使用LockGuard类封装锁的获取和释放，防止因异常导致的死锁
-
-7. **超时机制**
-   - 所有锁操作都支持超时，避免长时间的锁等待
 
 ## 数据流程
 
@@ -427,7 +419,7 @@ end
    - 测试`SystemException`、`CourseSystem`等系统类
    - 验证系统功能的正确性
 
-3. **工具类测试**
+4. **工具类测试**
    - 测试`Logger`、`I18nManager`等工具类
    - 验证其它功能的正确性
 
@@ -530,6 +522,7 @@ end
 - EnrollmentPool：选课记录对象池（建议初始大小：100，最大大小：1000）
 
 对象池应具有以下特性：
+
 - 线程安全设计
 - 自动扩容机制
 - 对象重用策略
@@ -546,47 +539,46 @@ end
 1. **软件要求**
 
    - C++17兼容的编译器
-   - CMake 3.10或更高版本
+   - CMake 3.16或更高版本
    - 依赖库：
-     - nlohmann/json: JSON解析库
-     - spdlog: 日志库
      - OpenSSL: 哈希加密
+     - google test: 如果要运行测试用例，请安装这个库
 
 2. **目录结构**
 
    ```
    project/
-├── CMakeLists.txt          # 项目构建配置
-├── build_script.sh         # 构建脚本
-├── include/                # 头文件目录
-│   ├── model/              # 数据模型
-│   ├── manager/            # 管理器类
-│   ├── system/             # 系统类
-│   └── util/               # 工具类
-├── src/                    # 源文件目录
-│   ├── model/              # 数据模型实现
-│   ├── manager/            # 管理器类实现
-│   ├── system/             # 系统类实现
-│   ├── util/               # 工具类实现
-│   └── main.cpp            # 主函数
-├── data/                   # 数据文件目录
-│   ├── Chinese.json        # 中文语言文件
-│   ├── English.json        # 英文语言文件
-│   ├── users.json          # 用户数据
-│   ├── courses.json        # 课程数据
-│   └── enrollment.json     # 选课数据
-├── log/                    # 日志文件目录
-│   ├── info.log            # 信息日志
-│   ├── warn.log            # 警告日志
-│   └── error.log           # 错误日志
-├── tests/                  # 测试目录
-│   ├── unit/               # 单元测试
-│   └── integration/        # 集成测试
-└── docs/                   # 文档目录
- ├── api.md                 # API文档
- ├── view_class.md          # 类视图文档
- ├── system_arch.md         # 系统架构文档
- └── require.md             # 需求分析文档
+   ├── CMakeLists.txt          # 项目构建配置
+   ├── build_script.sh         # 构建脚本
+   ├── include/                # 头文件目录
+   │   ├── model/              # 数据模型
+   │   ├── manager/            # 管理器类
+   │   ├── system/             # 系统类
+   │   └── util/               # 工具类
+   ├── src/                    # 源文件目录
+   │   ├── model/              # 数据模型实现
+   │   ├── manager/            # 管理器类实现
+   │   ├── system/             # 系统类实现
+   │   ├── util/               # 工具类实现
+   │   └── main.cpp            # 主函数
+   ├── data/                   # 数据文件目录
+   │   ├── Chinese.json        # 中文语言文件
+   │   ├── English.json        # 英文语言文件
+   │   ├── users.json          # 用户数据
+   │   ├── courses.json        # 课程数据
+   │   └── enrollment.json     # 选课数据
+   ├── log/                    # 日志文件目录
+   │   ├── info.log            # 信息日志
+   │   ├── warn.log            # 警告日志
+   │   └── error.log           # 错误日志
+   ├── tests/                  # 测试目录
+   │   ├── unit/               # 单元测试
+   │   └── integration/        # 集成测试
+   └── docs/                   # 文档目录
+    ├── api.md                 # API文档
+    ├── view_class.md          # 类视图文档
+    ├── system_arch.md         # 系统架构文档
+    └── require.md             # 需求分析文档
    ```
 
 ## 未来扩展计划
@@ -608,14 +600,14 @@ end
    - 审计日志查询和导出功能
    - 过期日志清理机制
 
-6. **会话管理**
+5. **会话管理**
    - 会话创建
    - 会话状态跟踪
    - 会话活动更新
    - 会话超时机制
    - 会话终止
 
-7. **数据备份与恢复机制**
+6. **数据备份与恢复机制**
 
 ## 并发设计意图
 
