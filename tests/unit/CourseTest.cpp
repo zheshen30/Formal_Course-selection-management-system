@@ -111,11 +111,9 @@ TEST_F(CourseTest, StudentEnrollmentAndDrop) {
 TEST_F(CourseTest, CourseTypeString) {
     Course requiredCourse("CS101", "必修课", CourseType::REQUIRED, 3.0, 48, "2023秋季", "teacher001", 50);
     Course electiveCourse("CS102", "选修课", CourseType::ELECTIVE, 2.0, 32, "2023秋季", "teacher001", 50);
-    Course restrictedCourse("CS103", "限选课", CourseType::RESTRICTED, 2.5, 40, "2023秋季", "teacher001", 50);
     
     EXPECT_EQ("必修", requiredCourse.getTypeString());
     EXPECT_EQ("选修", electiveCourse.getTypeString());
-    EXPECT_EQ("限选", restrictedCourse.getTypeString());
 }
 
 // 测试移动构造函数和移动赋值运算符

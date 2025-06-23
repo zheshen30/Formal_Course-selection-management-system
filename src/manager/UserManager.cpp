@@ -77,6 +77,13 @@ bool UserManager::addUser(std::unique_ptr<User> user) {
     
     users_[userId] = std::move(user);
     Logger::getInstance().info("成功添加用户: " + userId);
+    
+    // 立即保存数据，传入true表示已获取锁
+    bool saveResult = saveData(true);
+    if (!saveResult) {
+        Logger::getInstance().warning("添加用户后保存数据失败");
+    }
+    
     return true;
 }
 
@@ -94,6 +101,13 @@ bool UserManager::removeUser(const std::string& userId) {
     
     users_.erase(it);
     Logger::getInstance().info("成功移除用户: " + userId);
+    
+    // 立即保存数据，传入true表示已获取锁
+    bool saveResult = saveData(true);
+    if (!saveResult) {
+        Logger::getInstance().warning("移除用户后保存数据失败");
+    }
+    
     return true;
 }
 
@@ -276,20 +290,34 @@ bool UserManager::loadData() {
     }
 }
 
-bool UserManager::saveData() {
+bool UserManager::saveData(bool alreadyLocked) {
     try {
         json usersJson = json::array();
         std::string jsonStr;
+        std::vector<std::string> userIds;
         
-        // 第一阶段：在锁的保护下收集用户数据
+        // 第一阶段：收集用户数据
         {
-            LockGuard lock(mutex_, 3000); // 减少超时时间
-            if (!lock.isLocked()) {
-                throw SystemException(ErrorType::LOCK_TIMEOUT, "获取用户管理器锁超时");
+            // 如果调用者没有获取锁，则获取锁
+            std::unique_ptr<LockGuard> lockPtr;
+            if (!alreadyLocked) {
+                lockPtr = std::make_unique<LockGuard>(mutex_, 3000);
+                if (!lockPtr->isLocked()) {
+                    throw SystemException(ErrorType::LOCK_TIMEOUT, "获取用户管理器锁超时");
+                }
             }
             
+            // 收集所有用户ID
             for (const auto& pair : users_) {
-                const User* user = pair.second.get();
+                userIds.push_back(pair.first);
+            }
+            
+            // 对用户ID进行排序以确保保存顺序稳定
+            std::sort(userIds.begin(), userIds.end());
+            
+            // 按排序后的顺序收集用户数据
+            for (const auto& userId : userIds) {
+                const User* user = users_[userId].get();
                 json userJson;
                 
                 // 通用属性
@@ -329,7 +357,7 @@ bool UserManager::saveData() {
             }
             
             jsonStr = usersJson.dump(4); // 格式化JSON，缩进4个空格
-        } // 锁在这里释放
+        } // 如果创建了锁，锁会在这里释放
         
         // 第二阶段：在锁释放后保存数据到文件
         DataManager& dataManager = DataManager::getInstance();
@@ -349,6 +377,10 @@ bool UserManager::saveData() {
         Logger::getInstance().error("保存用户数据失败：" + std::string(e.what()));
         throw SystemException(ErrorType::OPERATION_FAILED, "保存用户数据失败：" + std::string(e.what()));
     }
+}
+
+bool UserManager::saveData() {
+    return saveData(false); // 表示调用者没有获取锁
 }
 
 bool UserManager::updateUserInfo(const User& user) {
@@ -400,6 +432,13 @@ bool UserManager::updateUserInfo(const User& user) {
     }
     
     Logger::getInstance().info("成功更新用户信息: " + user.getId());
+    
+    // 立即保存数据，传入true表示已获取锁
+    bool saveResult = saveData(true);
+    if (!saveResult) {
+        Logger::getInstance().warning("更新用户信息后保存数据失败");
+    }
+    
     return true;
 }
 
@@ -413,10 +452,7 @@ bool UserManager::hasUser(const std::string& userId) const {
 }
 
 bool UserManager::changeUserPassword(const std::string& userId, const std::string& oldPassword, const std::string& newPassword) {
-    User* user = nullptr;
-    
-    // 第一阶段：验证用户和密码，修改密码
-    {
+    try {
         LockGuard lock(mutex_, 5000); // 设置5秒超时
         if (!lock.isLocked()) {
             throw SystemException(ErrorType::LOCK_TIMEOUT, "获取用户管理器锁超时");
@@ -428,29 +464,26 @@ bool UserManager::changeUserPassword(const std::string& userId, const std::strin
             return false;
         }
         
-        user = it->second.get();
+        User* user = it->second.get();
+        
         if (!user->verifyPassword(oldPassword)) {
-            Logger::getInstance().warning("修改密码失败：用户 " + userId + " 旧密码验证错误");
+            Logger::getInstance().warning("修改密码失败：用户 " + userId + " 原密码验证失败");
             return false;
         }
         
-        // 设置新密码，内部会生成新的盐值和哈希
         user->setPassword(newPassword);
-    }
-    
-    // 第二阶段：保存更改到文件（不在同一个锁范围内）
-    try {
-        bool saveResult = this->saveData();
+        Logger::getInstance().info("用户 " + userId + " 密码修改成功");
+        
+        // 立即保存数据，传入true表示已获取锁
+        bool saveResult = saveData(true);
         if (!saveResult) {
-            Logger::getInstance().error("用户 " + userId + " 密码修改成功，但保存失败");
-            return false;
+            Logger::getInstance().warning("修改密码后保存数据失败");
         }
         
-        Logger::getInstance().info("用户 " + userId + " 密码修改成功");
         return true;
-    } catch (const SystemException& e) {
-        Logger::getInstance().error("用户 " + userId + " 密码修改成功，但保存时出现异常：" + e.what());
-        throw; // 重新抛出异常
+    } catch (const std::exception& e) {
+        Logger::getInstance().error("修改密码出现异常: " + std::string(e.what()));
+        return false;
     }
 }
 

@@ -192,6 +192,11 @@ private:
      */
     void handleStudentFunctions(int choice);
 
+    /**
+     * @brief 处理密码修改功能
+     */
+    void handlePasswordChange();
+
     bool initialized_ = false;      ///< 是否已初始化
     bool running_ = false;          ///< 是否正在运行
     User* currentUser_ = nullptr;   ///< 当前登录用户

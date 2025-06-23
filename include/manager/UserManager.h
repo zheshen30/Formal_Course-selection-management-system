@@ -130,6 +130,13 @@ public:
     bool saveData();
 
     /**
+     * @brief 保存用户数据（已获取锁的版本）
+     * @param alreadyLocked 调用者是否已经获取了锁
+     * @return 是否保存成功
+     */
+    bool saveData(bool alreadyLocked);
+
+    /**
      * @brief 更新用户信息
      * @param user 用户对象
      * @return 是否更新成功

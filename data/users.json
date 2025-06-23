@@ -27,5 +27,27 @@
         "salt": "",
         "title": "教授",
         "type": "TEACHER"
+    },
+    {
+        "contact": "mail",
+        "department": "computer",
+        "id": "tt",
+        "name": "tt",
+        "password": "7e9fc9be208a7c5eaa0c415d5ce7effabb5d888acd42989441579a2ac56758a6",
+        "salt": "22X9K5XtH01OuPlh",
+        "title": "professor",
+        "type": "TEACHER"
+    },
+    {
+        "age": 19,
+        "classInfo": "2401",
+        "contact": "mail",
+        "department": "computer",
+        "gender": "Male",
+        "id": "zheshen",
+        "name": "zheshen",
+        "password": "66aff5985e09657a61b6bafac90694bdb5ebec65a806e01fab9cf55dfbd1980f",
+        "salt": "yuYTWmRoAdutG08q",
+        "type": "STUDENT"
     }
 ]

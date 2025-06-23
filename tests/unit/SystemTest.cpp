@@ -259,6 +259,11 @@ TEST_F(SystemTest, PasswordChangeTest) {
     // 验证初始密码
     EXPECT_TRUE(user->verifyPassword("initial_password"));
     
+    // 模拟用户登录
+    EXPECT_TRUE(system->login("password_test", "initial_password"));
+    ASSERT_NE(nullptr, system->getCurrentUser()) << "登录后用户不应为空";
+    EXPECT_EQ("password_test", system->getCurrentUser()->getId());
+    
     // 场景1：新密码与确认密码不一致
     EXPECT_FALSE(system->changePassword(
         "password_test", "initial_password", "new_password", "different_password"));
@@ -288,9 +293,26 @@ TEST_F(SystemTest, PasswordChangeTest) {
     EXPECT_TRUE(user->verifyPassword("new_password123"));
     EXPECT_FALSE(user->verifyPassword("initial_password"));
     
-    // 场景5：用户不存在
+    // 注销登录
+    system->logout();
+    EXPECT_EQ(nullptr, system->getCurrentUser());
+    
+    // 场景5：用户未登录
     EXPECT_FALSE(system->changePassword(
-        "nonexistent_user", "password", "new_password", "new_password"));
+        "password_test", "new_password123", "another_password", "another_password"));
+    
+    // 场景6：尝试修改其他用户密码
+    // 先以admin001登录
+    EXPECT_TRUE(system->login("admin001", "admin"));
+    ASSERT_NE(nullptr, system->getCurrentUser()) << "登录后用户不应为空";
+    EXPECT_EQ("admin001", system->getCurrentUser()->getId());
+    
+    // 尝试修改password_test用户的密码，应该失败
+    EXPECT_FALSE(system->changePassword(
+        "password_test", "new_password123", "hacked_password", "hacked_password"));
+    
+    // 清理环境
+    system->logout();
     
     // 清理测试用户
     userManager.removeUser("password_test");

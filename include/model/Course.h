@@ -27,8 +27,7 @@
  */
 enum class CourseType {
     REQUIRED,      ///< 必修课
-    ELECTIVE,      ///< 选修课
-    RESTRICTED     ///< 限选课
+    ELECTIVE       ///< 选修课
 };
 
 /**

@@ -90,8 +90,6 @@ std::string Course::getTypeString() const {
             return "必修";
         case CourseType::ELECTIVE:
             return "选修";
-        case CourseType::RESTRICTED:
-            return "限选";
         default:
             return "未知";
     }

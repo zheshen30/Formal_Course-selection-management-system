@@ -245,11 +245,12 @@ TEST_F(SystemIntegrationTest, AdminFunctions) {
     std::vector<std::string> teacherIds = userManager->getAllTeacherIds();
     std::vector<std::string> adminIds = userManager->getAllAdminIds();
     
-    // 验证用户数量：1个管理员 + 1个教师 + 2个学生（test_student + new_student）
-    EXPECT_EQ(2, studentIds.size());
-    EXPECT_EQ(1, teacherIds.size());
-    EXPECT_EQ(1, adminIds.size());
-    EXPECT_EQ(4, studentIds.size() + teacherIds.size() + adminIds.size());
+    // 验证用户数量：2个管理员(admin001 + test_admin) + 2个教师(teacher001 + test_teacher) + 
+    // 3个学生(student001 + test_student + new_student)
+    EXPECT_EQ(3, studentIds.size());
+    EXPECT_EQ(2, teacherIds.size());
+    EXPECT_EQ(2, adminIds.size());
+    EXPECT_EQ(7, studentIds.size() + teacherIds.size() + adminIds.size());
     
     std::vector<std::string> courseIds = courseManager->getAllCourseIds();
     EXPECT_EQ(2, courseIds.size()); // 包含初始1个课程加1个新课程

@@ -220,8 +220,6 @@ bool CourseManager::loadData() {
                 type = CourseType::REQUIRED;
             } else if (typeStr == "ELECTIVE") {
                 type = CourseType::ELECTIVE;
-            } else if (typeStr == "RESTRICTED") {
-                type = CourseType::RESTRICTED;
             } else {
                 Logger::getInstance().warning("未知的课程类型：" + typeStr);
                 type = CourseType::ELECTIVE; // 默认为选修课
@@ -273,9 +271,6 @@ bool CourseManager::saveData() {
                     break;
                 case CourseType::ELECTIVE:
                     courseJson["type"] = "ELECTIVE";
-                    break;
-                case CourseType::RESTRICTED:
-                    courseJson["type"] = "RESTRICTED";
                     break;
                 default:
                     courseJson["type"] = "ELECTIVE"; // 默认为选修课
