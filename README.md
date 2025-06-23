@@ -48,20 +48,39 @@
   - **OpenSSL**（必须安装，用于密码哈希）
   - GoogleTest：单元测试框架（需要运行测试用例时安装）
 
+## 安装OpenSSL
+
+不同系统下安装OpenSSL的方法：
+
+### Linux
+
+```bash
+# Debian/Ubuntu
+sudo apt-get install libssl-dev
+
+# CentOS/RHEL
+sudo yum install openssl-devel
+```
+
+### macOS
+
+```bash
+brew install openssl
+```
+
+### Windows
+
+可通过以下方式获取：
+
+1. 使用vcpkg：`vcpkg install openssl`
+2. 直接下载预编译版本：https://slproweb.com/products/Win32OpenSSL.html
+3. 使用MSYS2：`pacman -S mingw-w64-x86_64-openssl`
+
 ## 构建与运行
 
 ### 直接构建
 
 1. 确保已安装OpenSSL库
-
-   ```bash
-   # Debian/Ubuntu
-   sudo apt-get install libssl-dev
-   # CentOS/RHEL
-   sudo yum install openssl-devel
-   # macOS
-   brew install openssl
-   ```
 
 2. 克隆代码库
 
@@ -111,7 +130,7 @@
 
 如果您从build目录运行程序，系统会自动定位到项目根目录的data和log文件夹。如果这些目录不存在，系统会自动创建它们。
 
-- 对于开发和生产环境：无需手动创建log目录，系统将自动处理;**但是主目录下的data目录中的语言数据文件（Chinese.json和English.json)不能删除和更改，用户数据文件中（user.json）预置了三个账户，这三个账户的内容最好不要修改和删除，除非你明确知道自己在做什么**
+- 对于开发和生产环境：无需手动创建log目录，系统将自动处理;**但是主目录下的data目录中的语言数据文件（Chinese.json和English.json)不能删除和更改，用户数据文件中（users.json）预置了三个账户，这三个账户的内容最好不要修改和删除，除非你明确知道自己在做什么，不要修改Chinese.json,English.json和users.json的文件名**
 
 系统预置了以下用户账号用于测试：
 

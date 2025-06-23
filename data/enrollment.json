@@ -1,8 +1,8 @@
 [
-  {
-    "studentId": "student001",
-    "courseId": "CS101",
-    "status": "ENROLLED",
-    "enrollmentTime": "2023-09-01 10:30:00"
-  }
+    {
+        "courseId": "CS101",
+        "enrollmentTime": "2023-09-01 10:30:00",
+        "status": "ENROLLED",
+        "studentId": "student001"
+    }
 ]
