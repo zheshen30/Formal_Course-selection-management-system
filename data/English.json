@@ -1,13 +1,17 @@
 {
   "main_menu_title": "Main Menu",
   "admin_menu_title": "Administrator Menu",
+  "admin_menu": "Administrator Menu",
   "teacher_menu_title": "Teacher Menu",
   "student_menu_title": "Student Menu",
+  "language_menu_title": "Language Selection",
 
   "login": "Login",
   "logout": "Logout",
   "exit": "Exit",
   "change_password": "Change Password",
+  "switch_language": "Switch Language",
+  "modify_user_info": "Modify Account Information",
 
   "enter_user_id": "Please enter user ID",
   "enter_password": "Please enter password",
@@ -19,6 +23,7 @@
   "user_management": "User Management",
   "course_management": "Course Management",
   "enrollment_query": "Enrollment Query",
+  "query_enrollment_records": "Query Enrollment Records",
 
   "view_courses": "View Courses",
   "view_students": "View Students",
@@ -118,6 +123,8 @@
   "confirm_delete_prompt": "(y/n)?",
   "delete_user_success": "User deleted successfully",
   "delete_user_failed": "Failed to delete user",
+  "user_list": "User List",
+  "cannot_delete_self": "Administrator cannot delete their own account",
 
   "cancel_operation": "Delete operation canceled",
   "enter_modify_user_id": "Please enter the user ID to modify",
@@ -230,6 +237,8 @@
   "enrolled_student_count": "Total enrolled students: {0}",
   
   "no_selected_courses": "This student has not selected any courses",
+  "enter_drop_course_id": "Please enter the course ID to drop",
+  "not_enrolled_course": "You are not enrolled in this course or the course does not exist",
   "student_selected_courses": "Courses selected by student {0}",
   "selected_courses_count": "Total selected courses: {0}",
   
@@ -243,5 +252,19 @@
   
   "welcome_title": "University Course Selection System",
   "welcome_subtitle": "University Course Selection System",
-  "cancel_delete": "Delete operation canceled"
+  "cancel_delete": "Delete operation canceled",
+  
+  "input_cannot_be_empty": "Input cannot be empty, please try again",
+  "username_cannot_be_empty": "Username cannot be empty, please try again",
+  "password_cannot_be_empty": "Password cannot be empty, please try again",
+  "department_cannot_be_empty": "Department cannot be empty, please try again",
+  "class_info_cannot_be_empty": "Class information cannot be empty, please try again",
+  "course_name_cannot_be_empty": "Course name cannot be empty, please try again",
+  "semester_cannot_be_empty": "Semester cannot be empty, please try again",
+  "too_many_attempts": "Too many incorrect inputs, operation cancelled",
+  "course_not_exists": "The course does not exist",
+  "available_teachers": "Available teachers list",
+  "teacher_name": "Teacher Name",
+  "course": "Course",
+  "not_logged_in": "Not logged in, please login first"
 }

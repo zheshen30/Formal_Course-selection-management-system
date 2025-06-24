@@ -30,6 +30,16 @@
     },
     {
         "contact": "mail",
+        "department": "computer science",
+        "id": "teacher002",
+        "name": "teacher",
+        "password": "f662b8f9deb10cb203c1749dc1f721b64eec45ac128e4912d14b0255fb36ebf6",
+        "salt": "a7a4YN3FBcWD0TAM",
+        "title": "prof",
+        "type": "TEACHER"
+    },
+    {
+        "contact": "mail",
         "department": "computer",
         "id": "tt",
         "name": "tt",
@@ -48,6 +58,18 @@
         "name": "zheshen",
         "password": "66aff5985e09657a61b6bafac90694bdb5ebec65a806e01fab9cf55dfbd1980f",
         "salt": "yuYTWmRoAdutG08q",
+        "type": "STUDENT"
+    },
+    {
+        "age": 18,
+        "classInfo": "sd",
+        "contact": "sd",
+        "department": "cs",
+        "gender": "male",
+        "id": "zheshen001",
+        "name": "zheshen",
+        "password": "103c9fc63effc3a821a83844aed1be5a3d7880c90a1750918b3df17b1ade80b6",
+        "salt": "eqfbm85PPJEP3GR2",
         "type": "STUDENT"
     },
     {

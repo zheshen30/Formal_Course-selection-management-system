@@ -24,6 +24,9 @@
 #include "../../include/model/User.h"
 #include <filesystem>
 #include <memory>
+#include <thread>
+#include <chrono>
+#include "../test_pch.h"
 
 // CourseSystem类的测试fixture
 class SystemTest : public ::testing::Test {
@@ -78,6 +81,13 @@ protected:
     void TearDown() override {
         // 清理测试环境
         system->shutdown();
+        
+        // 延迟一小段时间，确保文件操作完成
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        
+        // 清理测试数据目录
+        TestUtils::cleanTestDirectory("../test_data");
+        TestUtils::cleanTestDirectory("../test_log");
     }
 
     CourseSystem* system;

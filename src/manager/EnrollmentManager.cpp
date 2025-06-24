@@ -92,6 +92,11 @@ bool EnrollmentManager::enrollCourse(const std::string& studentId, const std::st
             return false;
         }
         
+        // 保存选课数据和课程数据，确保数据同步
+        saveData();
+        courseManager.saveData();
+        
+        // 记录选课信息到日志
         Logger::getInstance().info("选课成功：学生 " + studentId + " 选择课程 " + courseId);
         return true;
     } catch (const SystemException& e) {
@@ -118,12 +123,6 @@ bool EnrollmentManager::dropCourse(const std::string& studentId, const std::stri
             throw SystemException(ErrorType::NOT_ENROLLED, "未找到该选课记录");
         }
         
-        // 检查选课状态
-        if (enrollment->getStatus() != EnrollmentStatus::ENROLLED) {
-            Logger::getInstance().warning("退课失败：学生 " + studentId + " 未选课程 " + courseId);
-            throw SystemException(ErrorType::NOT_ENROLLED, "学生未选择此课程");
-        }
-        
         // 验证课程存在
         CourseManager& courseManager = CourseManager::getInstance();
         Course* course = courseManager.getCourse(courseId);
@@ -132,16 +131,25 @@ bool EnrollmentManager::dropCourse(const std::string& studentId, const std::stri
             return false;
         }
         
-        // 更新选课记录状态为已退
-        enrollment->setStatus(EnrollmentStatus::DROPPED);
-        
         // 从课程的学生列表中移除学生
         bool removed = course->removeStudent(studentId);
         if (!removed) {
             Logger::getInstance().warning("退课警告：无法从课程 " + courseId + " 中移除学生 " + studentId);
-            // 继续处理，不返回失败，因为选课记录状态已更新
+            // 继续处理，不返回失败
         }
         
+        // 移除选课记录
+        bool recordRemoved = removeEnrollment(studentId, courseId);
+        if (!recordRemoved) {
+            Logger::getInstance().error("退课失败：无法删除选课记录");
+            return false;
+        }
+        
+        // 保存选课数据和课程数据，确保数据同步
+        saveData();
+        courseManager.saveData();
+        
+        // 记录退课信息到日志
         Logger::getInstance().info("退课成功：学生 " + studentId + " 退出课程 " + courseId);
         return true;
     } catch (const SystemException& e) {
@@ -214,12 +222,8 @@ bool EnrollmentManager::isEnrolled(const std::string& studentId, const std::stri
     std::string key = generateKey(studentId, courseId);
     auto it = enrollments_.find(key);
     
-    if (it == enrollments_.end()) {
-        return false;
-    }
-    
-    // 检查状态是否为已选
-    return it->second->getStatus() == EnrollmentStatus::ENROLLED;
+    // 只需检查记录是否存在，不再检查状态
+    return it != enrollments_.end();
 }
 
 std::vector<Enrollment*> EnrollmentManager::findEnrollments(
@@ -286,22 +290,9 @@ bool EnrollmentManager::loadData() {
         for (const auto& enrollmentJson : enrollmentsJson) {
             std::string studentId = enrollmentJson["studentId"];
             std::string courseId = enrollmentJson["courseId"];
-            std::string statusStr = enrollmentJson["status"];
             std::string enrollmentTime = enrollmentJson["enrollmentTime"];
             
-            EnrollmentStatus status;
-            if (statusStr == "ENROLLED") {
-                status = EnrollmentStatus::ENROLLED;
-            } else if (statusStr == "DROPPED") {
-                status = EnrollmentStatus::DROPPED;
-            } else if (statusStr == "WAITLISTED") {
-                status = EnrollmentStatus::WAITLISTED;
-            } else {
-                Logger::getInstance().warning("未知的选课状态：" + statusStr);
-                status = EnrollmentStatus::ENROLLED; // 默认为已选
-            }
-            
-            auto enrollment = std::make_unique<Enrollment>(studentId, courseId, status);
+            auto enrollment = std::make_unique<Enrollment>(studentId, courseId);
             enrollment->setEnrollmentTime(enrollmentTime); // 设置时间，避免使用当前时间
             
             std::string key = generateKey(studentId, courseId);
@@ -335,21 +326,6 @@ bool EnrollmentManager::saveData() {
             enrollmentJson["studentId"] = enrollment->getStudentId();
             enrollmentJson["courseId"] = enrollment->getCourseId();
             enrollmentJson["enrollmentTime"] = enrollment->getEnrollmentTime();
-            
-            switch (enrollment->getStatus()) {
-                case EnrollmentStatus::ENROLLED:
-                    enrollmentJson["status"] = "ENROLLED";
-                    break;
-                case EnrollmentStatus::DROPPED:
-                    enrollmentJson["status"] = "DROPPED";
-                    break;
-                case EnrollmentStatus::WAITLISTED:
-                    enrollmentJson["status"] = "WAITLISTED";
-                    break;
-                default:
-                    enrollmentJson["status"] = "ENROLLED"; // 默认为已选
-                    break;
-            }
             
             enrollmentsJson.push_back(enrollmentJson);
         }

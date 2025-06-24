@@ -1,13 +1,17 @@
 {
   "main_menu_title": "主菜单",
   "admin_menu_title": "管理员菜单",
+  "admin_menu": "管理员菜单",
   "teacher_menu_title": "教师菜单",
   "student_menu_title": "学生菜单",
+  "language_menu_title": "语言选择",
 
   "login": "登录",
   "logout": "注销",
   "exit": "退出",
   "change_password": "修改密码",
+  "switch_language": "切换语言",
+  "modify_user_info": "修改账户信息",
 
   "enter_user_id": "请输入用户ID",
   "enter_password": "请输入密码",
@@ -19,6 +23,7 @@
   "user_management": "用户管理",
   "course_management": "课程管理",
   "enrollment_query": "选课查询",
+  "query_enrollment_records": "查询选课记录",
 
   "view_courses": "查看课程",
   "view_students": "查看学生",
@@ -118,6 +123,8 @@
   "confirm_delete_prompt": "(y/n)?",
   "delete_user_success": "成功删除用户",
   "delete_user_failed": "删除用户失败",
+  "user_list": "用户列表",
+  "cannot_delete_self": "管理员不能删除自己的账户",
 
   "cancel_operation": "删除操作已取消",
   "enter_modify_user_id": "请输入要修改的用户ID",
@@ -230,6 +237,8 @@
   "enrolled_student_count": "总选课人数: {0}",
   
   "no_selected_courses": "该学生还没有选择任何课程",
+  "enter_drop_course_id": "请输入要退选的课程ID",
+  "not_enrolled_course": "您未选修该课程或课程不存在",
   "student_selected_courses": "学生 {0} 已选择的课程",
   "selected_courses_count": "总选课数: {0}",
   
@@ -243,5 +252,19 @@
   
   "welcome_title": "大学选课系统",
   "welcome_subtitle": "大学选课系统",
-  "cancel_delete": "删除操作已取消"
+  "cancel_delete": "删除操作已取消",
+  
+  "input_cannot_be_empty": "输入不能为空，请重新输入",
+  "username_cannot_be_empty": "用户名不能为空，请重新输入",
+  "password_cannot_be_empty": "密码不能为空，请重新输入",
+  "department_cannot_be_empty": "专业不能为空，请重新输入",
+  "class_info_cannot_be_empty": "班级信息不能为空，请重新输入",
+  "course_name_cannot_be_empty": "课程名称不能为空，请重新输入",
+  "semester_cannot_be_empty": "学期不能为空，请重新输入",
+  "too_many_attempts": "输入错误次数过多，操作取消",
+  "course_not_exists": "该课程不存在",
+  "available_teachers": "可选的教师列表",
+  "teacher_name": "教师姓名",
+  "course": "课程",
+  "not_logged_in": "未登录，请先登录"
 }

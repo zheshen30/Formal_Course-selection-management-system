@@ -34,6 +34,8 @@
 
 ## 环境要求
 
+**本项目的开发环境：Rocky Linux 9.5（5.14.0-503.14.1.el9_5.x86_64内核版本）**
+
 - C++17兼容的编译器(GCC 8+/Clang 7+/MSVC 19.14+)
 - CMake 3.16或更高版本
 - 以下依赖库：
@@ -44,9 +46,7 @@
 
 ## 安装OpenSSL（必须安装）
 
-不同系统下安装OpenSSL的方法：
-
-### Linux
+**Linux下安装OpenSSL的方法：**
 
 ```bash
 # Debian/Ubuntu
@@ -56,18 +56,7 @@ sudo apt-get install libssl-dev
 sudo yum install openssl-devel
 ```
 
-### macOS
-
-```bash
-brew install openssl
-```
-
-### Windows
-
-可通过下面的方式获取：
-
- 使用vcpkg：`vcpkg install openssl`
-
+**macOS和Windows下的OpenSSL的安装方法请自行搜索**
 
 ## 安装GoogleTest（选装）
 
@@ -80,7 +69,7 @@ brew install openssl
 
 ### 直接构建
 
-1. 确保已安装OpenSSL库
+1. 确保已正确安装OpenSSL库
 
 2. 克隆代码库或通过压缩包获得完整源码
 
@@ -97,16 +86,14 @@ brew install openssl
    ```
 
    > 如果OpenSSL安装在非标准位置，可以使用：`cmake -DOPENSSL_ROOT_DIR=/path/to/openssl ..`
-   > 如果想要进行单元测试和集成测试，需要在cmake后加-DCMAKE_BUILD_TYPE=Debug选项 **先确保正确安装了GoogleTest**
+   > 如果要进行单元测试和集成测试，需要在cmake后加 `-DCMAKE_BUILD_TYPE=Debug`选项 **先确保正确安装了GoogleTest**
 
 4. 运行程序(build目录下./course_system)
 
    **请完整阅读使用规范文档**[使用规范](docs/user_regulation.md)
    docs目录下的user_regulation.md文件
    
-   **系统定义了严格的目录结构和使用规范,不遵守使用规范程序可能无法正常运行**
-
-
+   **系统定义了严格的目录结构和使用规范,不遵守使用规范程序可能无法正常运行，或者导致未定义行为**
 
 ## 数据与日志存储
 
@@ -115,13 +102,10 @@ brew install openssl
  详见使用规范文档[使用规范](docs/user_regulation.md)
  docs目录下的user_regulation.md文件
 
- 无需手动创建log目录，系统将自动处理;
- 
- **主目录下的data目录中的语言数据文件（Chinese.json和English.json)不能删除和更改。**
- 
- **用户数据文件中（users.json）预置了三个账户，这三个账户的内容最好不要修改和删除，除非你明确知道自己在做什么，不要修改json文件的文件名**
+ **请通过主程序进行操作，所有直接修改主目录的data目录下的json文件的行为是未定义的！！！**
+ **例如添加用户操作：使用主程序管理员用户下的添加用户功能，而不是直接在主目录的data目录下的json文件中添加数据**
 
-系统预置了以下用户账号：
+系统预置了以下用户账号（在主目录的data目录下的user.json文件)：
 
 | 角色   | 用户ID     | 密码     |
 | ------ | ---------- | -------- |
@@ -129,7 +113,6 @@ brew install openssl
 | 教师   | teacher001 | password |
 | 学生   | student001 | password |
 
- **所有用户都只能修改自己的密码** **管理员用户只有添加和删除用户的权限**
  **以上三个特殊账户的密码一经修改，密码的加密方式由纯哈希转化为哈希加盐值**
  **所有用户的密码都不支持找回功能**
 

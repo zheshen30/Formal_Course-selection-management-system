@@ -26,14 +26,27 @@
 
 namespace fs = std::filesystem;
 
-// 获取当前日期时间的字符串表示
+// 获取当前日期时间的字符串表示（北京时间，UTC+8）
 std::string getCurrentTimeString() {
+    // 定义北京时间相对UTC的偏移量（秒）
+    const int BEIJING_OFFSET = 8 * 3600; // 8小时 = 8 * 3600秒
+    
+    // 获取当前UTC时间戳
     auto now = std::chrono::system_clock::now();
-    auto time = std::chrono::system_clock::to_time_t(now);
+    auto now_time_t = std::chrono::system_clock::to_time_t(now);
+    
+    // 加上北京时间偏移
+    time_t beijing_time_t = now_time_t + BEIJING_OFFSET;
+    
+    // 获取毫秒部分
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
     
+    // 转换为tm结构（使用gmtime避免本地时区影响）
+    std::tm beijing_tm = *std::gmtime(&beijing_time_t);
+    
+    // 格式化时间字符串
     std::stringstream ss;
-    ss << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S");
+    ss << std::put_time(&beijing_tm, "%Y-%m-%d %H:%M:%S");
     ss << '.' << std::setfill('0') << std::setw(3) << ms.count();
     
     return ss.str();

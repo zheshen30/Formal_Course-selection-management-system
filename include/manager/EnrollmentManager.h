@@ -46,7 +46,7 @@ public:
     bool enrollCourse(const std::string& studentId, const std::string& courseId);
 
     /**
-     * @brief 学生退课
+     * @brief 学生退课 (直接删除选课记录)
      * @param studentId 学生ID
      * @param courseId 课程ID
      * @return 是否退课成功
@@ -79,7 +79,7 @@ public:
      * @brief 检查是否已选课
      * @param studentId 学生ID
      * @param courseId 课程ID
-     * @return 是否已选
+     * @return 是否已选课
      */
     bool isEnrolled(const std::string& studentId, const std::string& courseId) const;
 
@@ -104,7 +104,7 @@ public:
     bool saveData();
 
     /**
-     * @brief 完全移除选课记录（主要用于测试）
+     * @brief 移除选课记录
      * @param studentId 学生ID
      * @param courseId 课程ID
      * @return 是否成功移除

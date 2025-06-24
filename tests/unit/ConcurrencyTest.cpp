@@ -27,13 +27,15 @@
 #include "../../include/manager/CourseManager.h"
 #include "../../include/manager/EnrollmentManager.h"
 #include "../../include/util/DataManager.h"
+#include "../../include/util/TestUtils.h"
+#include "../test_pch.h"
 
 // 并发测试fixture
 class ConcurrencyTest : public ::testing::Test {
 protected:
     void SetUp() override {
         // 设置测试环境
-        DataManager::getInstance().setDataDirectory("./test_concurrency_data");
+        DataManager::getInstance().setDataDirectory("../test_data");
         
         // 创建测试数据
         setupTestData();
@@ -42,6 +44,21 @@ protected:
     void TearDown() override {
         // 清理测试环境
         cleanupTestData();
+        
+        // 确保测试数据已保存
+        try {
+            userManager.saveData();
+            courseManager.saveData();
+            enrollmentManager.saveData();
+        } catch (...) {
+            // 忽略异常
+        }
+        
+        // 延迟一小段时间，确保文件操作完成
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        
+        // 删除测试数据目录
+        TestUtils::cleanTestDirectory("../test_data");
     }
     
     void setupTestData() {

@@ -22,6 +22,9 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <thread>
+#include <chrono>
+#include "../test_pch.h"
 
 // 工具类的测试fixture
 class UtilTest : public ::testing::Test {
@@ -41,14 +44,13 @@ protected:
 
     void TearDown() override {
         // 清理测试环境
-        // 不删除目录，只删除测试中创建的文件
         try {
-            for (const auto& entry : std::filesystem::directory_iterator(testDir)) {
-                if (entry.path().filename().string() != "Chinese.json" && 
-                    entry.path().filename().string() != "English.json") {
-                    std::filesystem::remove_all(entry.path());
-                }
-            }
+            // 延迟一小段时间，确保文件操作完成
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            
+            // 彻底清理测试目录和日志目录
+            TestUtils::cleanTestDirectory(testDir);
+            TestUtils::cleanTestDirectory(testLogDir);
         } catch (const std::exception& e) {
             std::cerr << "清理测试目录异常: " << e.what() << std::endl;
         }

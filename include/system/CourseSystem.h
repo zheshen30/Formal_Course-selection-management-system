@@ -150,6 +150,11 @@ private:
     CourseSystem& operator=(const CourseSystem&) = delete;
     
     /**
+     * @brief 清屏函数
+     */
+    void clearScreen();
+    
+    /**
      * @brief 显示欢迎界面
      */
     void showWelcome() const;
@@ -158,6 +163,11 @@ private:
      * @brief 显示主菜单
      */
     void showMainMenu();
+    
+    /**
+     * @brief 显示语言选择菜单
+     */
+    void showLanguageMenu();
     
     /**
      * @brief 显示管理员菜单
@@ -196,6 +206,11 @@ private:
      * @brief 处理密码修改功能
      */
     void handlePasswordChange();
+    
+    /**
+     * @brief 处理用户账户信息修改功能
+     */
+    void handleUserInfoModification();
 
     bool initialized_ = false;      ///< 是否已初始化
     bool running_ = false;          ///< 是否正在运行

@@ -449,13 +449,21 @@ void CourseSystem::showMainMenu() {
         }
         
         // 获取登录和退出选项文本，提供后备选项
-        std::string loginText, exitText;
+        std::string loginText, switchLanguageText, exitText;
         try {
             loginText = getText("login");
             std::cout << "获取到登录选项: " << loginText << std::endl;
         } catch (...) {
             loginText = "登录 / Login";
             std::cout << "获取登录选项失败，使用默认值" << std::endl;
+        }
+        
+        try {
+            switchLanguageText = getText("switch_language");
+            std::cout << "获取到切换语言选项: " << switchLanguageText << std::endl;
+        } catch (...) {
+            switchLanguageText = "切换语言 / Switch Language";
+            std::cout << "获取切换语言选项失败，使用默认值" << std::endl;
         }
         
         try {
@@ -468,7 +476,8 @@ void CourseSystem::showMainMenu() {
         
         // 显示菜单选项
         std::cout << "1. " << loginText << std::endl;
-        std::cout << "2. " << exitText << std::endl;
+        std::cout << "2. " << switchLanguageText << std::endl;
+        std::cout << "3. " << exitText << std::endl;
     
         // 获取用户输入
         int choice = 0;
@@ -479,7 +488,7 @@ void CourseSystem::showMainMenu() {
         // 如果输入不是来自终端，直接使用默认选择
         if (!isTerminal) {
             std::cout << "检测到非终端输入，使用默认选择: 退出" << std::endl;
-            choice = 2; // 默认退出
+            choice = 3; // 默认退出
         } else {
             do {
                 std::cout << "> ";
@@ -497,7 +506,7 @@ void CourseSystem::showMainMenu() {
                     continue;
                 }
                 
-                // 直接检查输入是否为"1"或"2"
+                // 直接检查输入是否为"1"或"2"或"3"
                 if (input == "1") {
                     choice = 1;
                     std::cout << "检测到有效输入: 1" << std::endl;
@@ -506,12 +515,16 @@ void CourseSystem::showMainMenu() {
                     choice = 2;
                     std::cout << "检测到有效输入: 2" << std::endl;
                     break;
+                } else if (input == "3") {
+                    choice = 3;
+                    std::cout << "检测到有效输入: 3" << std::endl;
+                    break;
                 } else {
                     std::cout << "输入无效，请输入数字 / Invalid input, please enter a number" << std::endl;
                     
                     if (attempts >= MAX_ATTEMPTS) {
                         std::cout << "多次输入无效，默认选择退出 / Multiple invalid inputs, defaulting to exit" << std::endl;
-                        choice = 2; // 默认选择退出
+                        choice = 3; // 默认选择退出
                         break;
                     }
                 }
@@ -571,6 +584,9 @@ void CourseSystem::showMainMenu() {
                 std::cout << "登录失败，系统错误 / Login failed, system error" << std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(1));
             }
+        } else if (choice == 2) {
+            // 切换语言
+            showLanguageMenu();
         } else {
             // 退出
             std::cout << "退出系统... / Exiting system..." << std::endl;
@@ -585,12 +601,155 @@ void CourseSystem::showMainMenu() {
     }
 }
 
+void CourseSystem::showLanguageMenu() {
+    std::cout << "================================================" << std::endl;
+    std::cout << "            语言选择 / Language Selection        " << std::endl;
+    std::cout << "================================================" << std::endl;
+    
+    // 尝试获取翻译文本，但提供后备选项
+    std::string menuTitle;
+    try {
+        menuTitle = getText("language_menu_title");
+        std::cout << menuTitle << std::endl;
+    } catch (...) {
+        std::cout << "语言选择 / Language Selection" << std::endl;
+    }
+    
+    // 显示当前语言
+    std::cout << "当前语言 / Current language: " << I18nManager::languageToString(getCurrentLanguage()) << std::endl;
+    
+    // 显示可用的语言选项
+    std::cout << "1. 中文 (Chinese)" << std::endl;
+    std::cout << "2. English" << std::endl;
+    std::cout << "3. " << getText("return_to_parent_menu") << " / Return to Main Menu" << std::endl;
+    
+    // 获取用户输入
+    int choice = 0;
+    std::string input;
+    int attempts = 0;
+    const int MAX_ATTEMPTS = 3;
+    
+    do {
+        std::cout << "> ";
+        std::getline(std::cin, input);
+        
+        attempts++;
+        
+        if (input.empty()) {
+            std::cout << "输入为空，请重新输入 / Empty input, please try again" << std::endl;
+            continue;
+        }
+        
+        if (input == "1") {
+            choice = 1;
+            break;
+        } else if (input == "2") {
+            choice = 2;
+            break;
+        } else if (input == "3") {
+            choice = 3;
+            break;
+        } else {
+            std::cout << getText("invalid_input") << " / Invalid input, please try again" << std::endl;
+            
+            if (attempts >= MAX_ATTEMPTS) {
+                std::cout << "多次输入无效，返回主菜单 / Multiple invalid inputs, returning to main menu" << std::endl;
+                choice = 3;
+                break;
+            }
+        }
+    } while (true);
+    
+    if (choice == 1) {
+        // 切换到中文
+        if (selectLanguage(Language::CHINESE)) {
+            std::cout << "语言已切换到中文" << std::endl;
+        } else {
+            std::cout << "切换语言失败 / Failed to switch language" << std::endl;
+        }
+    } else if (choice == 2) {
+        // 切换到英文
+        if (selectLanguage(Language::ENGLISH)) {
+            std::cout << "Language switched to English" << std::endl;
+        } else {
+            std::cout << "Failed to switch language / 切换语言失败" << std::endl;
+        }
+    }
+    
+    // 无论选择哪种语言，都返回主菜单
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+}
+
 void CourseSystem::showAdminMenu() {
-    std::cout << getText("admin_menu_title") << std::endl;
+    // 删除 clearScreen() 调用
+    
+    std::cout << "========= " << getText("admin_menu") << " =========" << std::endl;
     std::cout << "1. " << getText("user_management") << std::endl;
     std::cout << "2. " << getText("course_management") << std::endl;
-    std::cout << "3. " << getText("enrollment_query") << std::endl;
-    std::cout << "4. " << getText("change_password") << std::endl;
+    std::cout << "3. " << getText("query_enrollment_records") << std::endl;
+    std::cout << "4. " << getText("modify_password") << std::endl;
+    std::cout << "5. " << getText("modify_user_info") << std::endl;
+    std::cout << "6. " << getText("logout") << std::endl;
+    std::cout << "7. " << getText("exit") << std::endl;
+    std::cout << "==============================" << std::endl;
+    
+    int choice = 0;
+    std::string input;
+    std::cout << "> ";
+    std::getline(std::cin, input);
+    
+    if (!InputValidator::validateChoice(input, 1, 7, choice)) {
+        std::cout << getText("invalid_input") << std::endl;
+        return;
+    }
+    
+    if (choice == 6) {
+        logout();
+        return;
+    } else if (choice == 7) {
+        shutdown();
+        return;
+    }
+    
+    try {
+        switch (choice) {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+                handleAdminFunctions(choice);
+                break;
+            case 5:
+                handleUserInfoModification(); // 处理修改用户信息
+                break;
+            default:
+                std::cout << getText("invalid_choice") << std::endl;
+                break;
+        }
+    } catch (const SystemException& e) {
+        // 处理系统异常
+        Logger::getInstance().error("处理管理员菜单选择时发生异常: " + e.getFormattedMessage());
+        std::cout << getText("system_error") << ": " << e.getFormattedMessage() << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+    } catch (const std::exception& e) {
+        // 处理标准异常
+        Logger::getInstance().error("处理管理员菜单选择时发生标准异常: " + std::string(e.what()));
+        std::cout << getText("system_error") << ": " << e.what() << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+    } catch (...) {
+        // 处理未知异常
+        Logger::getInstance().error("处理管理员菜单选择时发生未知异常");
+        std::cout << getText("system_error") << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+    }
+}
+
+void CourseSystem::showTeacherMenu() {
+    std::cout << getText("teacher_menu_title") << std::endl;
+    std::cout << "1. " << getText("view_courses") << std::endl;
+    std::cout << "2. " << getText("view_students") << std::endl;
+    std::cout << "3. " << getText("change_password") << std::endl;
+    std::cout << "4. " << getText("modify_user_info") << std::endl;
     std::cout << "5. " << getText("logout") << std::endl;
     std::cout << "6. " << getText("exit") << std::endl;
     
@@ -605,41 +764,13 @@ void CourseSystem::showAdminMenu() {
         }
     } while (choice < 1 || choice > 6);
     
-    if (choice >= 1 && choice <= 3) {
-        handleAdminFunctions(choice);
-    } else if (choice == 4) {
-        handlePasswordChange(); // 处理密码修改
-    } else if (choice == 5) {
-        logout();
-    } else {
-        shutdown();
-    }
-}
-
-void CourseSystem::showTeacherMenu() {
-    std::cout << getText("teacher_menu_title") << std::endl;
-    std::cout << "1. " << getText("view_courses") << std::endl;
-    std::cout << "2. " << getText("view_students") << std::endl;
-    std::cout << "3. " << getText("change_password") << std::endl;
-    std::cout << "4. " << getText("logout") << std::endl;
-    std::cout << "5. " << getText("exit") << std::endl;
-    
-    int choice = 0;
-    std::string input;
-    do {
-        std::cout << "> ";
-        std::getline(std::cin, input);
-        
-        if (!InputValidator::validateChoice(input, 1, 5, choice)) {
-            std::cout << getText("invalid_input") << std::endl;
-        }
-    } while (choice < 1 || choice > 5);
-    
     if (choice >= 1 && choice <= 2) {
         handleTeacherFunctions(choice);
     } else if (choice == 3) {
         handlePasswordChange(); // 处理密码修改
     } else if (choice == 4) {
+        handleUserInfoModification(); // 处理用户信息修改
+    } else if (choice == 5) {
         logout();
     } else {
         shutdown();
@@ -653,8 +784,9 @@ void CourseSystem::showStudentMenu() {
     std::cout << "3. " << getText("drop_course") << std::endl;
     std::cout << "4. " << getText("view_selected_courses") << std::endl;
     std::cout << "5. " << getText("change_password") << std::endl;
-    std::cout << "6. " << getText("logout") << std::endl;
-    std::cout << "7. " << getText("exit") << std::endl;
+    std::cout << "6. " << getText("modify_user_info") << std::endl;
+    std::cout << "7. " << getText("logout") << std::endl;
+    std::cout << "8. " << getText("exit") << std::endl;
     
     int choice = 0;
     std::string input;
@@ -662,16 +794,18 @@ void CourseSystem::showStudentMenu() {
         std::cout << "> ";
         std::getline(std::cin, input);
         
-        if (!InputValidator::validateChoice(input, 1, 7, choice)) {
+        if (!InputValidator::validateChoice(input, 1, 8, choice)) {
             std::cout << getText("invalid_input") << std::endl;
         }
-    } while (choice < 1 || choice > 7);
+    } while (choice < 1 || choice > 8);
     
     if (choice >= 1 && choice <= 4) {
         handleStudentFunctions(choice);
     } else if (choice == 5) {
         handlePasswordChange(); // 处理密码修改
     } else if (choice == 6) {
+        handleUserInfoModification(); // 处理用户信息修改
+    } else if (choice == 7) {
         logout();
     } else {
         shutdown();
@@ -731,6 +865,27 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         std::cout << getText("enter_user_id_prompt") << "：";
                         std::getline(std::cin, userId);
                         
+                        // 添加用户ID非空验证
+                        if (userId.empty()) {
+                            int attempts = 0;
+                            const int MAX_ATTEMPTS = 3;
+                            while (userId.empty() && attempts < MAX_ATTEMPTS) {
+                                attempts++;
+                                std::cout << getText("input_cannot_be_empty") << std::endl;
+                                std::cout << getText("enter_user_id_prompt") << "：";
+                                std::getline(std::cin, userId);
+                                
+                                if (attempts >= MAX_ATTEMPTS && userId.empty()) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
+                                    break;
+                                }
+                            }
+                            
+                            if (userId.empty()) {
+                                break;
+                            }
+                        }
+                        
                         // 检查用户ID是否已存在
                         if (userManager.getUser(userId) != nullptr) {
                             std::cout << getText("user_id_exists") << std::endl;
@@ -740,8 +895,50 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         std::cout << getText("enter_username") << "：";
                         std::getline(std::cin, name);
                         
+                        // 添加用户名非空验证
+                        if (name.empty()) {
+                            int attempts = 0;
+                            const int MAX_ATTEMPTS = 3;
+                            while (name.empty() && attempts < MAX_ATTEMPTS) {
+                                attempts++;
+                                std::cout << getText("username_cannot_be_empty") << std::endl;
+                                std::cout << getText("enter_username") << "：";
+                                std::getline(std::cin, name);
+                                
+                                if (attempts >= MAX_ATTEMPTS && name.empty()) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
+                                    break;
+                                }
+                            }
+                            
+                            if (name.empty()) {
+                                break;
+                            }
+                        }
+                        
                         std::cout << getText("enter_user_password") << "：";
                         std::getline(std::cin, password);
+                        
+                        // 添加密码非空验证
+                        if (password.empty()) {
+                            int attempts = 0;
+                            const int MAX_ATTEMPTS = 3;
+                            while (password.empty() && attempts < MAX_ATTEMPTS) {
+                                attempts++;
+                                std::cout << getText("password_cannot_be_empty") << std::endl;
+                                std::cout << getText("enter_user_password") << "：";
+                                std::getline(std::cin, password);
+                                
+                                if (attempts >= MAX_ATTEMPTS && password.empty()) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
+                                    break;
+                                }
+                            }
+                            
+                            if (password.empty()) {
+                                break;
+                            }
+                        }
                         
                         // 性别选择菜单
                         std::cout << getText("enter_user_gender") << "：" << std::endl;
@@ -763,7 +960,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
                                 gender = (genderChoice == 1) ? "male" : "female";
                                 validGender = true;
                             } else {
-                                std::cout << getText("invalid_gender") << std::endl;
+                                std::cout << getText("invalid_choice") << std::endl;
                                 if (genderAttempts >= MAX_ATTEMPTS) {
                                     std::cout << getText("too_many_attempts") << std::endl;
                                     return;
@@ -854,6 +1051,27 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             std::cout << getText("enter_email") << "：";
                             std::getline(std::cin, email);
                             
+                            // 添加邮箱非空验证
+                            if (email.empty()) {
+                                int attempts = 0;
+                                const int MAX_ATTEMPTS = 3;
+                                while (email.empty() && attempts < MAX_ATTEMPTS) {
+                                    attempts++;
+                                    std::cout << getText("input_cannot_be_empty") << std::endl;
+                                    std::cout << getText("enter_email") << "：";
+                                    std::getline(std::cin, email);
+                                    
+                                    if (attempts >= MAX_ATTEMPTS && email.empty()) {
+                                        std::cout << getText("too_many_attempts") << std::endl;
+                                        break;
+                                    }
+                                }
+                                
+                                if (email.empty()) {
+                                    break;
+                                }
+                            }
+                            
                             // 创建学生对象
                             std::unique_ptr<Student> student = std::make_unique<Student>(
                                 userId, name, password, gender, ageValue,
@@ -873,11 +1091,74 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             std::cout << getText("enter_teacher_title") << "：";
                             std::getline(std::cin, title);
                             
+                            // 添加职称非空验证
+                            if (title.empty()) {
+                                int attempts = 0;
+                                const int MAX_ATTEMPTS = 3;
+                                while (title.empty() && attempts < MAX_ATTEMPTS) {
+                                    attempts++;
+                                    std::cout << getText("input_cannot_be_empty") << std::endl;
+                                    std::cout << getText("enter_teacher_title") << "：";
+                                    std::getline(std::cin, title);
+                                    
+                                    if (attempts >= MAX_ATTEMPTS && title.empty()) {
+                                        std::cout << getText("too_many_attempts") << std::endl;
+                                        break;
+                                    }
+                                }
+                                
+                                if (title.empty()) {
+                                    break;
+                                }
+                            }
+                            
                             std::cout << getText("enter_teacher_department") << "：";
                             std::getline(std::cin, department);
                             
+                            // 添加院系非空验证
+                            if (department.empty()) {
+                                int attempts = 0;
+                                const int MAX_ATTEMPTS = 3;
+                                while (department.empty() && attempts < MAX_ATTEMPTS) {
+                                    attempts++;
+                                    std::cout << getText("department_cannot_be_empty") << std::endl;
+                                    std::cout << getText("enter_teacher_department") << "：";
+                                    std::getline(std::cin, department);
+                                    
+                                    if (attempts >= MAX_ATTEMPTS && department.empty()) {
+                                        std::cout << getText("too_many_attempts") << std::endl;
+                                        break;
+                                    }
+                                }
+                                
+                                if (department.empty()) {
+                                    break;
+                                }
+                            }
+                            
                             std::cout << getText("enter_email") << "：";
                             std::getline(std::cin, email);
+                            
+                            // 添加邮箱非空验证
+                            if (email.empty()) {
+                                int attempts = 0;
+                                const int MAX_ATTEMPTS = 3;
+                                while (email.empty() && attempts < MAX_ATTEMPTS) {
+                                    attempts++;
+                                    std::cout << getText("input_cannot_be_empty") << std::endl;
+                                    std::cout << getText("enter_email") << "：";
+                                    std::getline(std::cin, email);
+                                    
+                                    if (attempts >= MAX_ATTEMPTS && email.empty()) {
+                                        std::cout << getText("too_many_attempts") << std::endl;
+                                        break;
+                                    }
+                                }
+                                
+                                if (email.empty()) {
+                                    break;
+                                }
+                            }
                             
                             // 创建教师对象
                             std::unique_ptr<Teacher> teacher = std::make_unique<Teacher>(
@@ -892,13 +1173,31 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             }
                             
                         } else {  // 管理员
-                            std::string email, role;
-                            
-                            std::cout << getText("enter_email") << "：";
-                            std::getline(std::cin, email);
+                            std::string role;
                             
                             std::cout << getText("enter_admin_role") << "：";
                             std::getline(std::cin, role);
+                            
+                            // 添加角色非空验证
+                            if (role.empty()) {
+                                int attempts = 0;
+                                const int MAX_ATTEMPTS = 3;
+                                while (role.empty() && attempts < MAX_ATTEMPTS) {
+                                    attempts++;
+                                    std::cout << getText("input_cannot_be_empty") << std::endl;
+                                    std::cout << getText("enter_admin_role") << "：";
+                                    std::getline(std::cin, role);
+                                    
+                                    if (attempts >= MAX_ATTEMPTS && role.empty()) {
+                                        std::cout << getText("too_many_attempts") << std::endl;
+                                        break;
+                                    }
+                                }
+                                
+                                if (role.empty()) {
+                                    break;
+                                }
+                            }
                             
                             // 创建管理员对象
                             std::unique_ptr<Admin> admin = std::make_unique<Admin>(
@@ -919,6 +1218,77 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         // 获取用户管理器
                         UserManager& userManager = UserManager::getInstance();
                         
+                        // 先显示所有用户列表
+                        std::vector<std::string> studentIds = userManager.getAllStudentIds();
+                        std::vector<std::string> teacherIds = userManager.getAllTeacherIds();
+                        std::vector<std::string> adminIds = userManager.getAllAdminIds();
+                        
+                        std::cout << getText("user_list") << "：" << std::endl;
+                        std::cout << "--------------------------------" << std::endl;
+                        
+                        // 显示学生列表
+                        if (!studentIds.empty()) {
+                            std::cout << getText("student_list") << "：" << std::endl;
+                            std::cout << "--------------------------------" << std::endl;
+                            std::cout << getText("user_id") << "\t" << getText("user_name") << "\t" 
+                                      << getText("age") << "\t" << getText("gender") << "\t"
+                                      << getText("department") << "\t" << getText("class") << "\t"
+                                      << getText("enter_email") << std::endl;
+                            
+                            for (const std::string& studentId : studentIds) {
+                                Student* student = userManager.getStudent(studentId);
+                                if (student) {
+                                    std::cout << student->getId() << "\t"
+                                              << student->getName() << "\t"
+                                              << student->getAge() << "\t"
+                                              << student->getGender() << "\t"
+                                              << student->getDepartment() << "\t"
+                                              << student->getClassInfo() << "\t"
+                                              << student->getContact() << std::endl;
+                                }
+                            }
+                            std::cout << "--------------------------------" << std::endl;
+                        }
+                        
+                        // 显示教师列表
+                        if (!teacherIds.empty()) {
+                            std::cout << getText("teacher_list") << "：" << std::endl;
+                            std::cout << "--------------------------------" << std::endl;
+                            std::cout << getText("user_id") << "\t" << getText("user_name") << "\t" 
+                                      << getText("title") << "\t" << getText("department") << "\t"
+                                      << getText("enter_email") << std::endl;
+                            
+                            for (const std::string& teacherId : teacherIds) {
+                                Teacher* teacher = userManager.getTeacher(teacherId);
+                                if (teacher) {
+                                    std::cout << teacher->getId() << "\t"
+                                              << teacher->getName() << "\t"
+                                              << teacher->getTitle() << "\t"
+                                              << teacher->getDepartment() << "\t"
+                                              << teacher->getContact() << std::endl;
+                                }
+                            }
+                            std::cout << "--------------------------------" << std::endl;
+                        }
+                        
+                        // 显示管理员列表
+                        if (!adminIds.empty()) {
+                            std::cout << getText("admin_list") << "：" << std::endl;
+                            std::cout << "--------------------------------" << std::endl;
+                            std::cout << getText("user_id") << "\t" << getText("user_name") << "\t" 
+                                      << getText("role") << std::endl;
+                            
+                            for (const std::string& adminId : adminIds) {
+                                Admin* admin = userManager.getAdmin(adminId);
+                                if (admin) {
+                                    std::cout << admin->getId() << "\t"
+                                              << admin->getName() << "\t"
+                                              << getText("admin") << std::endl;
+                                }
+                            }
+                            std::cout << "--------------------------------" << std::endl;
+                        }
+                        
                         // 获取用户ID
                         std::string userId;
                         std::cout << getText("enter_delete_user_id") << "：";
@@ -928,6 +1298,12 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         User* user = userManager.getUser(userId);
                         if (!user) {
                             std::cout << getText("user_id_not_exists") << std::endl;
+                            break;
+                        }
+                        
+                        // 检查当前用户是否为管理员且尝试删除自己
+                        if (currentUser_ && currentUser_->getType() == UserType::ADMIN && currentUser_->getId() == userId) {
+                            std::cout << getText("cannot_delete_self") << std::endl;
                             break;
                         }
                         
@@ -1007,16 +1383,18 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             if (user->getType() == UserType::STUDENT) {
                                 Student* student = static_cast<Student*>(user);
                                 std::cout << getText("age") << ": " << student->getAge() << std::endl;
+                                std::cout << getText("gender") << ": " << student->getGender() << std::endl;
                                 std::cout << getText("department") << ": " << student->getDepartment() << std::endl;
                                 std::cout << getText("class") << ": " << student->getClassInfo() << std::endl;
-                                // 学生类可能没有email属性，需要检查模型类定义
+                                std::cout << getText("enter_email") << ": " << student->getContact() << std::endl;
                             } else if (user->getType() == UserType::TEACHER) {
                                 Teacher* teacher = static_cast<Teacher*>(user);
                                 std::cout << getText("title") << ": " << teacher->getTitle() << std::endl;
                                 std::cout << getText("department") << ": " << teacher->getDepartment() << std::endl;
-                                // 教师类可能没有email属性，需要检查模型类定义
+                                std::cout << getText("enter_email") << ": " << teacher->getContact() << std::endl;
                             } else if (user->getType() == UserType::ADMIN) {
-                                // 管理员类可能没有email和role属性，需要检查模型类定义
+                                // Admin类没有额外属性需要显示
+                                // 管理员类没有email属性，不显示联系方式
                             }
                             std::cout << "--------------------------------" << std::endl;
                             
@@ -1031,15 +1409,20 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             std::cout << getText("student_list") << "：" << std::endl;
                             std::cout << "--------------------------------" << std::endl;
                             std::cout << getText("user_id") << "\t" << getText("user_name") << "\t" 
-                                      << getText("department") << "\t" << getText("class") << std::endl;
+                                      << getText("age") << "\t" << getText("gender") << "\t"
+                                      << getText("department") << "\t" << getText("class") << "\t"
+                                      << getText("enter_email") << std::endl;
                             
                             for (const std::string& studentId : studentIds) {
                                 Student* student = userManager.getStudent(studentId);
                                 if (student) {
                                     std::cout << student->getId() << "\t"
                                               << student->getName() << "\t"
+                                              << student->getAge() << "\t"
+                                              << student->getGender() << "\t"
                                               << student->getDepartment() << "\t"
-                                              << student->getClassInfo() << std::endl;
+                                              << student->getClassInfo() << "\t"
+                                              << student->getContact() << std::endl;
                                 }
                             }
                             std::cout << "--------------------------------" << std::endl;
@@ -1056,7 +1439,8 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             std::cout << getText("teacher_list") << "：" << std::endl;
                             std::cout << "--------------------------------" << std::endl;
                             std::cout << getText("user_id") << "\t" << getText("user_name") << "\t" 
-                                      << getText("title") << "\t" << getText("department") << std::endl;
+                                      << getText("title") << "\t" << getText("department") << "\t"
+                                      << getText("enter_email") << std::endl;
                             
                             for (const std::string& teacherId : teacherIds) {
                                 Teacher* teacher = userManager.getTeacher(teacherId);
@@ -1064,7 +1448,8 @@ void CourseSystem::handleAdminFunctions(int choice) {
                                     std::cout << teacher->getId() << "\t"
                                               << teacher->getName() << "\t"
                                               << teacher->getTitle() << "\t"
-                                              << teacher->getDepartment() << std::endl;
+                                              << teacher->getDepartment() << "\t"
+                                              << teacher->getContact() << std::endl;
                                 }
                             }
                             std::cout << "--------------------------------" << std::endl;
@@ -1142,6 +1527,27 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         std::cout << getText("enter_course_id") << "：";
                         std::getline(std::cin, courseId);
                         
+                        // 添加课程ID非空验证
+                        if (courseId.empty()) {
+                            int attempts = 0;
+                            const int MAX_ATTEMPTS = 3;
+                            while (courseId.empty() && attempts < MAX_ATTEMPTS) {
+                                attempts++;
+                                std::cout << getText("input_cannot_be_empty") << std::endl;
+                                std::cout << getText("enter_course_id") << "：";
+                                std::getline(std::cin, courseId);
+                                
+                                if (attempts >= MAX_ATTEMPTS && courseId.empty()) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
+                                    break;
+                                }
+                            }
+                            
+                            if (courseId.empty()) {
+                                break;
+                            }
+                        }
+                        
                         // 检查课程ID是否已存在
                         if (courseManager.hasCourse(courseId)) {
                             std::cout << getText("course_id_exists") << std::endl;
@@ -1150,6 +1556,27 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         
                         std::cout << getText("enter_course_name") << "：";
                         std::getline(std::cin, name);
+                        
+                        // 添加课程名称非空验证
+                        if (name.empty()) {
+                            int attempts = 0;
+                            const int MAX_ATTEMPTS = 3;
+                            while (name.empty() && attempts < MAX_ATTEMPTS) {
+                                attempts++;
+                                std::cout << getText("course_name_cannot_be_empty") << std::endl;
+                                std::cout << getText("enter_course_name") << "：";
+                                std::getline(std::cin, name);
+                                
+                                if (attempts >= MAX_ATTEMPTS && name.empty()) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
+                                    break;
+                                }
+                            }
+                            
+                            if (name.empty()) {
+                                break;
+                            }
+                        }
                         
                         // 选择课程类型
                         std::cout << getText("select_course_type") << "：" << std::endl;
@@ -1179,97 +1606,153 @@ void CourseSystem::handleAdminFunctions(int choice) {
                                 break;
                         }
                         
-                                                        std::cout << getText("enter_credit") << "：";
-                                
-                                double credit = 0.0;
-                                bool validCredit = false;
-                                int creditAttempts = 0;
-                                
-                                while (!validCredit && creditAttempts < MAX_ATTEMPTS) {
-                                    std::getline(std::cin, creditStr);
-                                    creditAttempts++;
-                                    
-                                    if (InputValidator::validateDouble(creditStr, 0.0, 10.0, credit)) {
-                                        validCredit = true;
-                                    } else {
-                                        std::cout << getText("invalid_credit") << std::endl;
-                                        if (creditAttempts >= MAX_ATTEMPTS) {
-                                            std::cout << getText("too_many_attempts") << std::endl;
-                                            break;
-                                        }
-                                        std::cout << getText("enter_credit") << "：";
-                                    }
-                                }
-                                
-                                if (!validCredit) {
+                        std::cout << getText("enter_credit") << "：";
+                        
+                        double credit = 0.0;
+                        bool validCredit = false;
+                        int creditAttempts = 0;
+                        
+                        while (!validCredit && creditAttempts < MAX_ATTEMPTS) {
+                            std::getline(std::cin, creditStr);
+                            creditAttempts++;
+                            
+                            if (InputValidator::validateDouble(creditStr, 0.0, 10.0, credit)) {
+                                validCredit = true;
+                            } else {
+                                std::cout << getText("invalid_credit") << std::endl;
+                                if (creditAttempts >= MAX_ATTEMPTS) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
                                     break;
                                 }
+                                std::cout << getText("enter_credit") << "：";
+                            }
+                        }
+                        
+                        if (!validCredit) {
+                            break;
+                        }
                         
                         std::cout << getText("enter_hours") << "：";
                         std::getline(std::cin, hoursStr);
                         
                         int hours = 0;
-                        if (!InputValidator::validateInteger(hoursStr, 0, 200, hours)) {
-                            std::cout << getText("invalid_hours") << std::endl;
+                        bool validHours = false;
+                        int hoursAttempts = 0;
+                        while (!validHours && hoursAttempts < MAX_ATTEMPTS) {
+                            hoursAttempts++;
+                            if (InputValidator::validateInteger(hoursStr, 0, 200, hours)) {
+                                validHours = true;
+                            } else {
+                                std::cout << getText("invalid_hours") << std::endl;
+                                if (hoursAttempts >= MAX_ATTEMPTS) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
+                                    break;
+                                }
+                                std::cout << getText("enter_hours") << "：";
+                                std::getline(std::cin, hoursStr);
+                            }
+                        }
+                        
+                        if (!validHours) {
                             break;
                         }
                         
                         std::cout << getText("enter_semester") << "：";
                         std::getline(std::cin, semester);
                         
-                                                        std::cout << getText("enter_teacher_id") << "：";
+                        // 添加学期非空验证
+                        if (semester.empty()) {
+                            int attempts = 0;
+                            while (semester.empty() && attempts < MAX_ATTEMPTS) {
+                                attempts++;
+                                std::cout << getText("semester_cannot_be_empty") << std::endl;
+                                std::cout << getText("enter_semester") << "：";
+                                std::getline(std::cin, semester);
                                 
-                                bool validTeacherId = false;
-                                int teacherAttempts = 0;
-                                
-                                // 验证教师ID是否存在
-                                UserManager& userManager = UserManager::getInstance();
-                                
-                                while (!validTeacherId && teacherAttempts < MAX_ATTEMPTS) {
-                                    std::getline(std::cin, teacherId);
-                                    teacherAttempts++;
-                                    
-                                    if (userManager.getTeacher(teacherId)) {
-                                        validTeacherId = true;
-                                    } else {
-                                        std::cout << getText("teacher_id_not_exists") << std::endl;
-                                        if (teacherAttempts >= MAX_ATTEMPTS) {
-                                            std::cout << getText("too_many_attempts") << std::endl;
-                                            break;
-                                        }
-                                        std::cout << getText("enter_teacher_id") << "：";
-                                    }
-                                }
-                                
-                                if (!validTeacherId) {
+                                if (attempts >= MAX_ATTEMPTS && semester.empty()) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
                                     break;
                                 }
+                            }
+                            
+                            if (semester.empty()) {
+                                break;
+                            }
+                        }
                         
-                                                        std::cout << getText("enter_max_capacity") << "：";
-                                
-                                int maxCapacity = 0;
-                                bool validMaxCapacity = false;
-                                int maxCapacityAttempts = 0;
-                                
-                                while (!validMaxCapacity && maxCapacityAttempts < MAX_ATTEMPTS) {
-                                    std::getline(std::cin, maxCapacityStr);
-                                    maxCapacityAttempts++;
-                                    
-                                    if (InputValidator::validateInteger(maxCapacityStr, 1, 1000, maxCapacity)) {
-                                        validMaxCapacity = true;
-                                    } else {
-                                        std::cout << getText("invalid_max_capacity") << std::endl;
-                                        if (maxCapacityAttempts >= MAX_ATTEMPTS) {
-                                            std::cout << getText("too_many_attempts") << std::endl;
-                                            break;
-                                        }
-                                        std::cout << getText("enter_max_capacity") << "：";
-                                    }
-                                }
-                                
-                                if (!validMaxCapacity) {
+                        // 获取并显示所有教师列表
+                        UserManager& userManager = UserManager::getInstance();
+                        std::vector<std::string> teacherIds = userManager.getAllTeacherIds();
+                        
+                        if (teacherIds.empty()) {
+                            std::cout << getText("no_teachers") << std::endl;
+                            break;
+                        }
+                        
+                        std::cout << getText("available_teachers") << "：" << std::endl;
+                        std::cout << "--------------------------------" << std::endl;
+                        std::cout << getText("teacher_id") << "\t" 
+                                  << getText("teacher_name") << std::endl;
+                        
+                        for (const std::string& id : teacherIds) {
+                            Teacher* teacher = userManager.getTeacher(id);
+                            if (teacher) {
+                                std::cout << teacher->getId() << "\t"
+                                          << teacher->getName() << std::endl;
+                            }
+                        }
+                        std::cout << "--------------------------------" << std::endl;
+                        
+                        std::cout << getText("enter_teacher_id") << "：";
+                        
+                        bool validTeacherId = false;
+                        int teacherAttempts = 0;
+                        
+                        while (!validTeacherId && teacherAttempts < MAX_ATTEMPTS) {
+                            std::getline(std::cin, teacherId);
+                            teacherAttempts++;
+                            
+                            if (userManager.getTeacher(teacherId)) {
+                                validTeacherId = true;
+                            } else {
+                                std::cout << getText("teacher_id_not_exists") << std::endl;
+                                if (teacherAttempts >= MAX_ATTEMPTS) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
                                     break;
                                 }
+                                std::cout << getText("enter_teacher_id") << "：";
+                            }
+                        }
+                        
+                        if (!validTeacherId) {
+                            break;
+                        }
+                        
+                        std::cout << getText("enter_max_capacity") << "：";
+                        
+                        int maxCapacity = 0;
+                        bool validMaxCapacity = false;
+                        int maxCapacityAttempts = 0;
+                        
+                        while (!validMaxCapacity && maxCapacityAttempts < MAX_ATTEMPTS) {
+                            std::getline(std::cin, maxCapacityStr);
+                            maxCapacityAttempts++;
+                            
+                            if (InputValidator::validateInteger(maxCapacityStr, 1, 1000, maxCapacity)) {
+                                validMaxCapacity = true;
+                            } else {
+                                std::cout << getText("invalid_max_capacity") << std::endl;
+                                if (maxCapacityAttempts >= MAX_ATTEMPTS) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
+                                    break;
+                                }
+                                std::cout << getText("enter_max_capacity") << "：";
+                            }
+                        }
+                        
+                        if (!validMaxCapacity) {
+                            break;
+                        }
                         
                         try {
                             // 创建课程对象
@@ -1296,6 +1779,35 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         CourseManager& courseManager = CourseManager::getInstance();
                         EnrollmentManager& enrollmentManager = EnrollmentManager::getInstance();
                         
+                        // 显示所有课程列表
+                        std::vector<std::string> allCourseIds = courseManager.getAllCourseIds();
+                        
+                        if (allCourseIds.empty()) {
+                            std::cout << getText("no_courses") << std::endl;
+                            break;
+                        }
+                        
+                        std::cout << "所有课程：" << std::endl;
+                        std::cout << "--------------------------------" << std::endl;
+                        std::cout << getText("course_id") << "\t" 
+                                  << getText("course_name") << "\t" 
+                                  << getText("course_type") << "\t"
+                                  << getText("credit") << "\t"
+                                  << getText("current_enrollment") << "/" << getText("max_capacity") << std::endl;
+                        
+                        for (const std::string& id : allCourseIds) {
+                            Course* course = courseManager.getCourse(id);
+                            if (course) {
+                                std::cout << course->getId() << "\t"
+                                          << course->getName() << "\t"
+                                          << course->getTypeString() << "\t"
+                                          << course->getCredit() << "\t"
+                                          << course->getCurrentEnrollment() << "/"
+                                          << course->getMaxCapacity() << std::endl;
+                            }
+                        }
+                        std::cout << "--------------------------------" << std::endl;
+                        
                         // 获取课程ID
                         std::string courseId;
                         std::cout << getText("enter_delete_course_id") << "：";
@@ -1314,7 +1826,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         std::cout << getText("course_name") << ": " << course->getName() << std::endl;
                         std::cout << getText("course_type") << ": " << course->getTypeString() << std::endl;
                         std::cout << getText("credit") << ": " << course->getCredit() << std::endl;
-                        std::cout << getText("current_enrollment") << ": " << course->getCurrentEnrollment() << std::endl;
+                        std::cout << getText("current_enrollment") << ": " << course->getCurrentEnrollment() << "/" << course->getMaxCapacity() << std::endl;
                         
                         // 检查课程是否已有学生选修
                         if (course->getCurrentEnrollment() > 0) {
@@ -1353,15 +1865,39 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         // 获取课程管理器
                         CourseManager& courseManager = CourseManager::getInstance();
                         
+                        // 显示所有课程列表
+                        std::vector<std::string> allCourseIds = courseManager.getAllCourseIds();
+                        
+                        if (allCourseIds.empty()) {
+                            std::cout << getText("no_courses") << std::endl;
+                            break;
+                        }
+                        
+                        std::cout << "所有课程：" << std::endl;
+                        std::cout << "--------------------------------" << std::endl;
+                        std::cout << getText("course_id") << "\t" 
+                                  << getText("course_name") << "\t" 
+                                  << getText("course_type") << std::endl;
+                        
+                        for (const std::string& id : allCourseIds) {
+                            Course* course = courseManager.getCourse(id);
+                            if (course) {
+                                std::cout << course->getId() << "\t"
+                                          << course->getName() << "\t"
+                                          << course->getTypeString() << std::endl;
+                            }
+                        }
+                        std::cout << "--------------------------------" << std::endl;
+                        
                         // 获取课程ID
                         std::string courseId;
-                        std::cout << "请输入要修改的课程ID：";
+                        std::cout << getText("enter_modify_course_id") << "：";
                         std::getline(std::cin, courseId);
                         
                         // 检查课程是否存在
                         Course* course = courseManager.getCourse(courseId);
                         if (!course) {
-                            std::cout << "课程ID不存在！" << std::endl;
+                            std::cout << getText("course_id_not_exists") << std::endl;
                             break;
                         }
                         
@@ -1375,7 +1911,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         std::cout << getText("semester") << ": " << course->getSemester() << std::endl;
                         std::cout << getText("teacher_id") << ": " << course->getTeacherId() << std::endl;
                         std::cout << getText("max_capacity") << ": " << course->getMaxCapacity() << std::endl;
-                        std::cout << getText("current_enrollment") << ": " << course->getCurrentEnrollment() << std::endl;
+                        std::cout << getText("current_enrollment") << ": " << course->getCurrentEnrollment() << "/" << course->getMaxCapacity() << std::endl;
                         
                         // 显示修改选项
                         std::cout << getText("select_modify_course_content") << "：" << std::endl;
@@ -1481,12 +2017,34 @@ void CourseSystem::handleAdminFunctions(int choice) {
                                 break;
                             }
                             case 6: { // 修改教师ID
+                                // 获取并显示所有教师列表
+                                UserManager& userManager = UserManager::getInstance();
+                                std::vector<std::string> teacherIds = userManager.getAllTeacherIds();
+                                
+                                if (teacherIds.empty()) {
+                                    std::cout << getText("no_teachers") << std::endl;
+                                    break;
+                                }
+                                
+                                std::cout << getText("available_teachers") << "：" << std::endl;
+                                std::cout << "--------------------------------" << std::endl;
+                                std::cout << getText("teacher_id") << "\t" 
+                                          << getText("teacher_name") << std::endl;
+                                
+                                for (const std::string& id : teacherIds) {
+                                    Teacher* teacher = userManager.getTeacher(id);
+                                    if (teacher) {
+                                        std::cout << teacher->getId() << "\t"
+                                                  << teacher->getName() << std::endl;
+                                    }
+                                }
+                                std::cout << "--------------------------------" << std::endl;
+                                
                                 std::string newTeacherId;
                                 std::cout << getText("enter_new_teacher_id") << "：";
                                 std::getline(std::cin, newTeacherId);
                                 
                                 // 验证教师ID是否存在
-                                UserManager& userManager = UserManager::getInstance();
                                 if (!userManager.getTeacher(newTeacherId)) {
                                     std::cout << getText("teacher_id_not_exists") << std::endl;
                                     break;
@@ -1632,7 +2190,13 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             } else {
                                 std::cout << getText("query_result") << "：" << std::endl;
                                 std::cout << "--------------------------------" << std::endl;
-                                std::cout << "课程ID\t课程名称\t类型\t学分\t学时\t教师ID\t容量\t已选人数" << std::endl;
+                                std::cout << getText("course_id") << "\t" 
+                                  << getText("course_name") << "\t" 
+                                  << getText("course_type") << "\t"
+                                  << getText("credit") << "\t"
+                                  << getText("hours") << "\t"
+                                  << getText("teacher_id") << "\t"
+                                  << getText("current_enrollment") << "/" << getText("max_capacity") << std::endl;
                                 
                                 for (const std::string& courseId : courseIds) {
                                     Course* course = courseManager.getCourse(courseId);
@@ -1643,8 +2207,8 @@ void CourseSystem::handleAdminFunctions(int choice) {
                                                 << course->getCredit() << "\t"
                                                 << course->getHours() << "\t"
                                                 << course->getTeacherId() << "\t"
-                                                << course->getMaxCapacity() << "\t"
-                                                << course->getCurrentEnrollment() << std::endl;
+                                                << course->getCurrentEnrollment() << "/"
+                                                << course->getMaxCapacity() << std::endl;
                                     }
                                 }
                                                             std::cout << "--------------------------------" << std::endl;
@@ -1693,30 +2257,42 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         std::cout << getText("enter_user_id_prompt") << "：";
                         std::getline(std::cin, studentId);
                         
-                        // 获取学生的所有选课记录
-                        std::vector<Enrollment*> enrollments = enrollmentManager.getStudentEnrollments(studentId);
+                        // 先验证学生ID是否存在
+                        UserManager& userManager = UserManager::getInstance();
+                        Student* student = userManager.getStudent(studentId);
                         
-                        if (enrollments.empty()) {
-                            std::cout << getText("no_selected_courses") << std::endl;
+                        if (!student) {
+                            std::cout << getText("user_id_not_exists") << std::endl;
                         } else {
-                            std::cout << getFormattedText("student_selected_courses", studentId) << std::endl;
-                            std::cout << "--------------------------------" << std::endl;
-                            std::cout << "课程ID\t课程名称\t学分\t教师ID\t选课时间" << std::endl;
+                            // 获取学生的所有选课记录
+                            std::vector<Enrollment*> enrollments = enrollmentManager.getStudentEnrollments(studentId);
                             
-                            for (Enrollment* enrollment : enrollments) {
-                                std::string courseId = enrollment->getCourseId();
-                                Course* course = courseManager.getCourse(courseId);
+                            if (enrollments.empty()) {
+                                std::cout << getText("no_selected_courses") << std::endl;
+                            } else {
+                                std::cout << getFormattedText("student_selected_courses", studentId) << std::endl;
+                                std::cout << "--------------------------------" << std::endl;
+                                std::cout << getText("course_id") << "\t" 
+                                          << getText("course_name") << "\t" 
+                                          << getText("credit") << "\t" 
+                                          << getText("teacher_id") << "\t"
+                                          << getText("enrollment_time") << std::endl;
                                 
-                                if (course) {
-                                    std::cout << course->getId() << "\t"
-                                              << course->getName() << "\t"
-                                              << course->getCredit() << "\t"
-                                              << course->getTeacherId() << "\t"
-                                              << enrollment->getEnrollmentTime() << std::endl;
+                                for (Enrollment* enrollment : enrollments) {
+                                    std::string courseId = enrollment->getCourseId();
+                                    Course* course = courseManager.getCourse(courseId);
+                                    
+                                    if (course) {
+                                        std::cout << course->getId() << "\t"
+                                                  << course->getName() << "\t"
+                                                  << course->getCredit() << "\t"
+                                                  << course->getTeacherId() << "\t"
+                                                  << enrollment->getEnrollmentTime() << std::endl;
+                                    }
                                 }
+                                std::cout << "--------------------------------" << std::endl;
+                                std::cout << getFormattedText("selected_courses_count", static_cast<int>(enrollments.size())) << std::endl;
                             }
-                            std::cout << "--------------------------------" << std::endl;
-                            std::cout << getFormattedText("selected_courses_count", static_cast<int>(enrollments.size())) << std::endl;
                         }
                         
                         std::cout << getText("press_enter_to_continue") << std::endl;
@@ -1725,18 +2301,29 @@ void CourseSystem::handleAdminFunctions(int choice) {
                     }
                     case 2: { // 按课程查询
                         std::string courseId;
-                        std::cout << "请输入课程ID：";
+                        std::cout << getText("enter_course_id") << "：";
                         std::getline(std::cin, courseId);
                         
                         // 获取该课程的所有选课记录
+                        CourseManager& courseManager = CourseManager::getInstance(); // 添加课程管理器
+                        
+                        // 先检查课程是否存在
+                        if (!courseManager.hasCourse(courseId)) {
+                            std::cout << getText("course_not_exists") << std::endl;
+                            break;
+                        }
+                        
                         std::vector<Enrollment*> enrollments = enrollmentManager.getCourseEnrollments(courseId);
                         
                         if (enrollments.empty()) {
-                            std::cout << "该课程还没有学生选修。" << std::endl;
+                            std::cout << getText("no_course_students") << std::endl;
                         } else {
                             std::cout << getFormattedText("course_students", courseId) << std::endl;
                             std::cout << "--------------------------------" << std::endl;
-                            std::cout << "学生ID\t姓名\t班级\t专业" << std::endl;
+                            std::cout << getText("user_id") << "\t" 
+                                          << getText("user_name") << "\t" 
+                                          << getText("class") << "\t" 
+                                          << getText("department") << std::endl;
                             
                             UserManager& userManager = UserManager::getInstance();
                             for (Enrollment* enrollment : enrollments) {
@@ -1766,130 +2353,8 @@ void CourseSystem::handleAdminFunctions(int choice) {
             break;
         }
             
-        default:
-            break;
-    }
-}
-
-void CourseSystem::handleTeacherFunctions(int choice) {
-    // 这里只是示例，实际应该实现完整的教师功能
-    switch (choice) {
-        case 1: { // 查看课程
-            std::cout << getText("view_courses_function") << std::endl;
-            // 实现更完整的查看课程功能
-            
-            // 获取教师ID
-            std::string teacherId = currentUser_->getId();
-            
-            // 获取课程管理器
-            CourseManager& courseManager = CourseManager::getInstance();
-            
-            // 查询该教师的所有课程
-            std::vector<std::string> teacherCourseIds = courseManager.findCourses(
-                [teacherId](const Course& c) { return c.getTeacherId() == teacherId; }
-            );
-            
-            // 显示课程列表
-            if (teacherCourseIds.empty()) {
-                std::cout << "您还没有任教的课程。" << std::endl;
-            } else {
-                std::cout << "您的课程列表：" << std::endl;
-                std::cout << "--------------------------------" << std::endl;
-                std::cout << "课程ID\t课程名称\t学分\t课时\t学期\t容量" << std::endl;
-                
-                for (const std::string& courseId : teacherCourseIds) {
-                    Course* course = courseManager.getCourse(courseId);
-                    if (course) {
-                        std::cout << course->getId() << "\t"
-                                  << course->getName() << "\t"
-                                  << course->getCredit() << "\t"
-                                  << course->getHours() << "\t"
-                                  << course->getSemester() << "\t"
-                                  << course->getMaxCapacity() << std::endl;
-                    }
-                }
-                std::cout << "--------------------------------" << std::endl;
-            }
-            
-            std::cout << getText("press_enter_to_continue") << std::endl;
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            break;
-        }
-            
-        case 2: { // 查看学生
-            std::cout << getText("view_students_function") << std::endl;
-            
-            // 获取教师ID
-            std::string teacherId = currentUser_->getId();
-            
-            // 获取课程和选课管理器
-            CourseManager& courseManager = CourseManager::getInstance();
-            EnrollmentManager& enrollmentManager = EnrollmentManager::getInstance();
-            UserManager& userManager = UserManager::getInstance();
-            
-            // 查询该教师的所有课程
-            std::vector<std::string> teacherCourseIds = courseManager.findCourses(
-                [teacherId](const Course& c) { return c.getTeacherId() == teacherId; }
-            );
-            
-            if (teacherCourseIds.empty()) {
-                std::cout << "您还没有任教的课程。" << std::endl;
-            } else {
-                // 先列出所有课程
-                std::cout << "您的课程列表：" << std::endl;
-                for (std::size_t i = 0; i < teacherCourseIds.size(); ++i) {
-                    Course* course = courseManager.getCourse(teacherCourseIds[i]);
-                    if (course) {
-                        std::cout << (i+1) << ". " << course->getId() << " - " << course->getName() << std::endl;
-                    }
-                }
-                
-                // 选择要查看的课程
-                int courseIndex = 0;
-                std::string input;
-                do {
-                    std::cout << "请选择要查看的课程(1-" << teacherCourseIds.size() << ")，或输入0返回：";
-                    std::getline(std::cin, input);
-                    
-                    if (input == "0") {
-                        return; // 用户选择返回
-                    }
-                    
-                } while (!InputValidator::validateChoice(input, 1, teacherCourseIds.size(), courseIndex));
-                
-                // 获取选定的课程
-                std::string selectedCourseId = teacherCourseIds[courseIndex-1];
-                Course* selectedCourse = courseManager.getCourse(selectedCourseId);
-                
-                if (selectedCourse) {
-                    // 获取该课程的所有选课记录
-                    std::vector<Enrollment*> enrollments = enrollmentManager.getCourseEnrollments(selectedCourseId);
-                    
-                    if (enrollments.empty()) {
-                        std::cout << "该课程还没有学生选修。" << std::endl;
-                    } else {
-                        std::cout << getFormattedText("course_students", selectedCourse->getName()) << std::endl;
-                        std::cout << "--------------------------------" << std::endl;
-                        std::cout << "学生ID\t姓名\t班级\t专业" << std::endl;
-                        
-                        for (Enrollment* enrollment : enrollments) {
-                            std::string studentId = enrollment->getStudentId();
-                            Student* student = static_cast<Student*>(userManager.getStudent(studentId));
-                            
-                            if (student) {
-                                std::cout << student->getId() << "\t"
-                                          << student->getName() << "\t"
-                                          << student->getClassInfo() << "\t"
-                                          << student->getDepartment() << std::endl;
-                            }
-                        }
-                        std::cout << "--------------------------------" << std::endl;
-                    }
-                }
-            }
-            
-            std::cout << getText("press_enter_to_continue") << std::endl;
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        case 4: { // 修改密码
+            handlePasswordChange();
             break;
         }
             
@@ -1933,7 +2398,7 @@ void CourseSystem::handleStudentFunctions(int choice) {
                         courseIds = courseManager.getAllCourseIds();
                         break;
                     case 2: { // 按课程ID查询
-                        std::cout << "请输入课程ID：";
+                        std::cout << getText("enter_course_id") << "：";
                         std::string courseId;
                         std::getline(std::cin, courseId);
                         
@@ -1943,7 +2408,7 @@ void CourseSystem::handleStudentFunctions(int choice) {
                         break;
                     }
                     case 3: { // 按课程名称查询
-                        std::cout << "请输入课程名称（可以是部分名称）：";
+                        std::cout << getText("enter_course_name") << "：";
                         std::string courseName;
                         std::getline(std::cin, courseName);
                         
@@ -1955,7 +2420,7 @@ void CourseSystem::handleStudentFunctions(int choice) {
                         break;
                     }
                     case 4: { // 按教师查询
-                        std::cout << "请输入教师ID：";
+                        std::cout << getText("enter_teacher_id") << "：";
                         std::string teacherId;
                         std::getline(std::cin, teacherId);
                         
@@ -1971,11 +2436,16 @@ void CourseSystem::handleStudentFunctions(int choice) {
                 
                 // 显示查询结果
                 if (courseIds.empty()) {
-                    std::cout << "未找到符合条件的课程。" << std::endl;
+                    std::cout << getText("no_courses") << std::endl;
                 } else {
-                    std::cout << "查询结果：" << std::endl;
+                    std::cout << getText("query_result") << "：" << std::endl;
                     std::cout << "--------------------------------" << std::endl;
-                    std::cout << "课程ID\t课程名称\t学分\t课时\t教师ID\t容量" << std::endl;
+                    std::cout << getText("course_id") << "\t" 
+                          << getText("course_name") << "\t" 
+                          << getText("credit") << "\t" 
+                          << getText("hours") << "\t"
+                          << getText("teacher_id") << "\t"
+                          << getText("current_enrollment") << "/" << getText("max_capacity") << std::endl;
                     
                     for (const std::string& courseId : courseIds) {
                         Course* course = courseManager.getCourse(courseId);
@@ -1985,6 +2455,7 @@ void CourseSystem::handleStudentFunctions(int choice) {
                                       << course->getCredit() << "\t"
                                       << course->getHours() << "\t"
                                       << course->getTeacherId() << "\t"
+                                      << course->getCurrentEnrollment() << "/" 
                                       << course->getMaxCapacity() << std::endl;
                         }
                     }
@@ -2023,13 +2494,13 @@ void CourseSystem::handleStudentFunctions(int choice) {
                 
                 // 获取学生当前已选课程列表，用于显示时标记
                 std::vector<Enrollment*> studentEnrollments = enrollmentManager.getStudentEnrollments(studentId);
-                                        std::vector<std::string> enrolledCourseIds;
-                        for (const auto& enrollment : studentEnrollments) {
-                            enrolledCourseIds.push_back(enrollment->getCourseId());
-                        }
-                        
-                        // 获取最新选课人数
-                        courseManager.loadData();
+                std::vector<std::string> enrolledCourseIds;
+                for (const auto& enrollment : studentEnrollments) {
+                    enrolledCourseIds.push_back(enrollment->getCourseId());
+                }
+                
+                // 确保获取最新数据
+                courseManager.loadData();
                 
                 for (const std::string& courseId : allCourseIds) {
                     Course* course = courseManager.getCourse(courseId);
@@ -2061,21 +2532,31 @@ void CourseSystem::handleStudentFunctions(int choice) {
                 if (!courseManager.hasCourse(courseId)) {
                     std::cout << getText("course_not_found") << std::endl;
                 } else {
-                                            // 尝试选课
-                        try {
-                            if (enrollmentManager.enrollCourse(studentId, courseId)) {
-                                std::cout << getText("operation_success") << std::endl;
-                                
-                                // 更新课程数据以确保人数正确显示
-                                courseManager.loadData();
-                            } else {
-                                std::cout << getText("operation_failed") << std::endl;
+                    // 尝试选课
+                    try {
+                        if (enrollmentManager.enrollCourse(studentId, courseId)) {
+                            std::cout << getText("operation_success") << std::endl;
+                            
+                            // 更新课程数据以确保人数正确显示
+                            courseManager.loadData();
+                            
+                            // 显示选课成功后的课程信息
+                            Course* course = courseManager.getCourse(courseId);
+                            if (course) {
+                                std::string courseName = course->getName();
+                                std::cout << getText("course") << " " << courseName << " " 
+                                          << getText("current_enrollment") << ": " 
+                                          << course->getCurrentEnrollment() << "/" 
+                                          << course->getMaxCapacity() << std::endl;
                             }
-                        } catch (const SystemException& e) {
-                            std::cout << getText("operation_failed") << ": " << e.what() << std::endl;
-                        } catch (const std::exception& e) {
-                            std::cout << getText("system_error") << ": " << e.what() << std::endl;
+                        } else {
+                            std::cout << getText("operation_failed") << std::endl;
                         }
+                    } catch (const SystemException& e) {
+                        std::cout << getText("operation_failed") << ": " << e.what() << std::endl;
+                    } catch (const std::exception& e) {
+                        std::cout << getText("system_error") << ": " << e.what() << std::endl;
+                    }
                 }
             }
             
@@ -2126,37 +2607,37 @@ void CourseSystem::handleStudentFunctions(int choice) {
                 std::string courseId;
                 std::getline(std::cin, courseId);
                 
-                                                // 检查是否已选该课程，同时获取课程对象确认存在性
-                                bool hasEnrolled = false;
-                                Course* courseToDrop = nullptr;
-                                CourseManager& courseManager = CourseManager::getInstance();
-                                
-                                for (const auto& enrollment : enrollments) {
-                                    if (enrollment->getCourseId() == courseId) {
-                                        hasEnrolled = true;
-                                        courseToDrop = courseManager.getCourse(courseId);
-                                        break;
-                                    }
-                                }
-                                
-                                if (!hasEnrolled || !courseToDrop) {
-                                    std::cout << getText("not_enrolled_course") << std::endl;
-                                } else {
-                                            // 尝试退课
-                        try {
-                            if (enrollmentManager.dropCourse(studentId, courseId)) {
-                                std::cout << getText("operation_success") << std::endl;
-                                
-                                // 更新课程数据以确保人数正确显示
-                                courseManager.loadData();
-                            } else {
-                                std::cout << getText("operation_failed") << std::endl;
-                            }
-                        } catch (const SystemException& e) {
-                            std::cout << getText("operation_failed") << ": " << e.what() << std::endl;
-                        } catch (const std::exception& e) {
-                            std::cout << getText("system_error") << ": " << e.what() << std::endl;
+                // 检查是否已选该课程，同时获取课程对象确认存在性
+                bool hasEnrolled = false;
+                Course* courseToDrop = nullptr;
+                CourseManager& courseManager = CourseManager::getInstance();
+                
+                for (const auto& enrollment : enrollments) {
+                    if (enrollment->getCourseId() == courseId) {
+                        hasEnrolled = true;
+                        courseToDrop = courseManager.getCourse(courseId);
+                        break;
+                    }
+                }
+                
+                if (!hasEnrolled || !courseToDrop) {
+                    std::cout << getText("not_enrolled_course") << std::endl;
+                } else {
+                    // 尝试退课
+                    try {
+                        if (enrollmentManager.dropCourse(studentId, courseId)) {
+                            std::cout << getText("operation_success") << std::endl;
+                            
+                            // 更新课程数据以确保人数正确显示
+                            courseManager.loadData();
+                        } else {
+                            std::cout << getText("operation_failed") << std::endl;
                         }
+                    } catch (const SystemException& e) {
+                        std::cout << getText("operation_failed") << ": " << e.what() << std::endl;
+                    } catch (const std::exception& e) {
+                        std::cout << getText("system_error") << ": " << e.what() << std::endl;
+                    }
                 }
             }
             
@@ -2178,7 +2659,7 @@ void CourseSystem::handleStudentFunctions(int choice) {
             std::vector<Enrollment*> enrollments = enrollmentManager.getStudentEnrollments(studentId);
             
             if (enrollments.empty()) {
-                std::cout << getText("operation_failed") << std::endl;
+                std::cout << getText("no_selected_courses") << std::endl;
             } else {
                 std::cout << getText("view_selected_courses") << "：" << std::endl;
                 std::cout << "--------------------------------" << std::endl;
@@ -2295,3 +2776,347 @@ void CourseSystem::handlePasswordChange() {
 template std::string CourseSystem::getFormattedText(const std::string& key, int) const;
 template std::string CourseSystem::getFormattedText(const std::string& key, const std::string&) const;
 template std::string CourseSystem::getFormattedText(const std::string& key, const char*) const;
+
+// 在文件头部添加clearScreen函数的声明
+void CourseSystem::clearScreen() {
+    // 使用控制字符清屏
+    std::cout << "\033[2J\033[1;1H";
+}
+
+void CourseSystem::handleTeacherFunctions(int choice) {
+    // 这里只是示例，实际应该实现完整的教师功能
+    switch (choice) {
+        case 1: { // 查看课程
+            std::cout << getText("view_courses_function") << std::endl;
+            // 实现更完整的查看课程功能
+            
+            // 获取教师ID
+            std::string teacherId = currentUser_->getId();
+            
+            // 获取课程管理器
+            CourseManager& courseManager = CourseManager::getInstance();
+            
+            // 查询该教师的所有课程
+            std::vector<std::string> teacherCourseIds = courseManager.findCourses(
+                [teacherId](const Course& c) { return c.getTeacherId() == teacherId; }
+            );
+            
+            // 显示课程列表
+            if (teacherCourseIds.empty()) {
+                std::cout << getText("no_teaching_courses") << std::endl;
+            } else {
+                std::cout << getText("your_courses") << "：" << std::endl;
+                std::cout << "--------------------------------" << std::endl;
+                std::cout << getText("course_id") << "\t" 
+                          << getText("course_name") << "\t" 
+                          << getText("credit") << "\t" 
+                          << getText("hours") << "\t"
+                          << getText("semester") << "\t"
+                          << getText("current_enrollment") << "/" << getText("max_capacity") << std::endl;
+                
+                for (const std::string& courseId : teacherCourseIds) {
+                    Course* course = courseManager.getCourse(courseId);
+                    if (course) {
+                        std::cout << course->getId() << "\t"
+                                  << course->getName() << "\t"
+                                  << course->getCredit() << "\t"
+                                  << course->getHours() << "\t"
+                                  << course->getSemester() << "\t"
+                                  << course->getCurrentEnrollment() << "/" << course->getMaxCapacity() << std::endl;
+                    }
+                }
+                std::cout << "--------------------------------" << std::endl;
+            }
+            
+            std::cout << getText("press_enter_to_continue") << std::endl;
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            break;
+        }
+            
+        case 2: { // 查看学生
+            std::cout << getText("view_students_function") << std::endl;
+            
+            // 获取教师ID
+            std::string teacherId = currentUser_->getId();
+            
+            // 获取课程和选课管理器
+            CourseManager& courseManager = CourseManager::getInstance();
+            EnrollmentManager& enrollmentManager = EnrollmentManager::getInstance();
+            UserManager& userManager = UserManager::getInstance();
+            
+            // 查询该教师的所有课程
+            std::vector<std::string> teacherCourseIds = courseManager.findCourses(
+                [teacherId](const Course& c) { return c.getTeacherId() == teacherId; }
+            );
+            
+            if (teacherCourseIds.empty()) {
+                std::cout << getText("no_teaching_courses") << std::endl;
+            } else {
+                // 先列出所有课程
+                std::cout << getText("your_courses") << "：" << std::endl;
+                for (std::size_t i = 0; i < teacherCourseIds.size(); ++i) {
+                    Course* course = courseManager.getCourse(teacherCourseIds[i]);
+                    if (course) {
+                        std::cout << (i+1) << ". " << course->getId() << " - " << course->getName() << std::endl;
+                    }
+                }
+                
+                // 选择要查看的课程
+                int courseIndex = 0;
+                std::string input;
+                do {
+                    std::cout << getFormattedText("select_course_to_view", static_cast<int>(teacherCourseIds.size())) << "：";
+                    std::getline(std::cin, input);
+                    
+                    if (input == "0") {
+                        return; // 用户选择返回
+                    }
+                    
+                } while (!InputValidator::validateChoice(input, 1, teacherCourseIds.size(), courseIndex));
+                
+                // 获取选定的课程
+                std::string selectedCourseId = teacherCourseIds[courseIndex-1];
+                Course* selectedCourse = courseManager.getCourse(selectedCourseId);
+                
+                if (selectedCourse) {
+                    // 获取该课程的所有选课记录
+                    std::vector<Enrollment*> enrollments = enrollmentManager.getCourseEnrollments(selectedCourseId);
+                    
+                    if (enrollments.empty()) {
+                        std::cout << getText("no_course_students") << std::endl;
+                    } else {
+                        std::cout << getFormattedText("course_students", selectedCourse->getName()) << std::endl;
+                        std::cout << "--------------------------------" << std::endl;
+                        std::cout << getText("user_id") << "\t" 
+                                  << getText("user_name") << "\t" 
+                                  << getText("class") << "\t" 
+                                  << getText("department") << std::endl;
+                        
+                        for (Enrollment* enrollment : enrollments) {
+                            std::string studentId = enrollment->getStudentId();
+                            Student* student = static_cast<Student*>(userManager.getStudent(studentId));
+                            
+                            if (student) {
+                                std::cout << student->getId() << "\t"
+                                          << student->getName() << "\t"
+                                          << student->getClassInfo() << "\t"
+                                          << student->getDepartment() << std::endl;
+                            }
+                        }
+                        std::cout << "--------------------------------" << std::endl;
+                        std::cout << getFormattedText("enrolled_student_count", static_cast<int>(enrollments.size())) << std::endl;
+                    }
+                }
+            }
+            
+            std::cout << getText("press_enter_to_continue") << std::endl;
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            break;
+        }
+            
+        default:
+            std::cout << getText("invalid_choice") << std::endl;
+            break;
+    }
+}
+
+void CourseSystem::handleUserInfoModification() {
+    if (!currentUser_) {
+        std::cout << getText("operation_failed") << ": " << getText("not_logged_in") << std::endl;
+        return;
+    }
+    
+    // 获取当前用户ID
+    std::string userId = currentUser_->getId();
+    UserType userType = currentUser_->getType();
+    
+    std::cout << "========= " << getText("modify_user_info") << " =========" << std::endl;
+    std::cout << getText("current_user_info") << ":" << std::endl;
+    std::cout << getText("user_id") << ": " << userId << std::endl;
+    std::cout << getText("user_name") << ": " << currentUser_->getName() << std::endl;
+    
+    // 根据用户类型显示不同的信息
+    if (userType == UserType::STUDENT) {
+        Student* student = static_cast<Student*>(currentUser_);
+        std::cout << getText("gender") << ": " << student->getGender() << std::endl;
+        std::cout << getText("age") << ": " << student->getAge() << std::endl;
+        std::cout << getText("department") << ": " << student->getDepartment() << std::endl;
+        std::cout << getText("class") << ": " << student->getClassInfo() << std::endl;
+        std::cout << getText("contact") << ": " << student->getContact() << std::endl;
+    } else if (userType == UserType::TEACHER) {
+        Teacher* teacher = static_cast<Teacher*>(currentUser_);
+        std::cout << getText("department") << ": " << teacher->getDepartment() << std::endl;
+        std::cout << getText("title") << ": " << teacher->getTitle() << std::endl;
+        std::cout << getText("contact") << ": " << teacher->getContact() << std::endl;
+    } else if (userType == UserType::ADMIN) {
+        // 管理员没有额外信息
+    }
+    
+    std::cout << "-------------------------------" << std::endl;
+    
+    // 显示可修改的信息选项
+    std::cout << getText("select_modify_content") << ":" << std::endl;
+    std::cout << "1. " << getText("user_name") << std::endl;
+    
+    int maxOption = 1;
+    
+    if (userType == UserType::STUDENT) {
+        std::cout << "2. " << getText("gender") << std::endl;
+        std::cout << "3. " << getText("age") << std::endl;
+        std::cout << "4. " << getText("department") << std::endl;
+        std::cout << "5. " << getText("class") << std::endl;
+        std::cout << "6. " << getText("contact") << std::endl;
+        maxOption = 6;
+    } else if (userType == UserType::TEACHER) {
+        std::cout << "2. " << getText("department") << std::endl;
+        std::cout << "3. " << getText("title") << std::endl;
+        std::cout << "4. " << getText("contact") << std::endl;
+        maxOption = 4;
+    }
+    
+    std::cout << (maxOption + 1) << ". " << getText("return") << std::endl;
+    
+    // 获取用户选择
+    int choice = 0;
+    std::string input;
+    do {
+        std::cout << "> ";
+        std::getline(std::cin, input);
+        
+        if (!InputValidator::validateChoice(input, 1, maxOption + 1, choice)) {
+            std::cout << getText("invalid_input") << std::endl;
+        }
+    } while (choice < 1 || choice > maxOption + 1);
+    
+    // 返回上级菜单
+    if (choice == maxOption + 1) {
+        return;
+    }
+    
+    // 修改信息
+    std::string newValue;
+    int newAge = 0;
+    bool updateSuccess = false;
+    
+    switch (userType) {
+        case UserType::STUDENT: {
+            Student* student = static_cast<Student*>(currentUser_);
+            
+            switch (choice) {
+                case 1: // 修改名字
+                    std::cout << getText("enter_username") << ": ";
+                    std::getline(std::cin, newValue);
+                    if (!newValue.empty()) {
+                        student->setName(newValue);
+                    }
+                    break;
+                case 2: // 修改性别
+                    std::cout << getText("enter_user_gender") << ": ";
+                    std::getline(std::cin, newValue);
+                    if (!newValue.empty()) {
+                        student->setGender(newValue);
+                    }
+                    break;
+                case 3: // 修改年龄
+                    std::cout << getText("enter_student_age") << ": ";
+                    std::getline(std::cin, newValue);
+                    if (InputValidator::validateInteger(newValue, 0, 120, newAge)) {
+                        student->setAge(newAge);
+                    } else {
+                        std::cout << getText("invalid_age") << std::endl;
+                        return;
+                    }
+                    break;
+                case 4: // 修改系别
+                    std::cout << getText("enter_department") << ": ";
+                    std::getline(std::cin, newValue);
+                    if (!newValue.empty()) {
+                        student->setDepartment(newValue);
+                    }
+                    break;
+                case 5: // 修改班级信息
+                    std::cout << getText("enter_class_info") << ": ";
+                    std::getline(std::cin, newValue);
+                    if (!newValue.empty()) {
+                        student->setClassInfo(newValue);
+                    }
+                    break;
+                case 6: // 修改联系方式
+                    std::cout << getText("enter_email") << ": ";
+                    std::getline(std::cin, newValue);
+                    if (!newValue.empty()) {
+                        student->setContact(newValue);
+                    }
+                    break;
+            }
+            
+            // 更新用户信息
+            updateSuccess = UserManager::getInstance().updateUserInfo(*student);
+            break;
+        }
+        case UserType::TEACHER: {
+            Teacher* teacher = static_cast<Teacher*>(currentUser_);
+            
+            switch (choice) {
+                case 1: // 修改名字
+                    std::cout << getText("enter_username") << ": ";
+                    std::getline(std::cin, newValue);
+                    if (!newValue.empty()) {
+                        teacher->setName(newValue);
+                    }
+                    break;
+                case 2: // 修改系别
+                    std::cout << getText("enter_teacher_department") << ": ";
+                    std::getline(std::cin, newValue);
+                    if (!newValue.empty()) {
+                        teacher->setDepartment(newValue);
+                    }
+                    break;
+                case 3: // 修改职称
+                    std::cout << getText("enter_teacher_title") << ": ";
+                    std::getline(std::cin, newValue);
+                    if (!newValue.empty()) {
+                        teacher->setTitle(newValue);
+                    }
+                    break;
+                case 4: // 修改联系方式
+                    std::cout << getText("enter_email") << ": ";
+                    std::getline(std::cin, newValue);
+                    if (!newValue.empty()) {
+                        teacher->setContact(newValue);
+                    }
+                    break;
+            }
+            
+            // 更新用户信息
+            updateSuccess = UserManager::getInstance().updateUserInfo(*teacher);
+            break;
+        }
+        case UserType::ADMIN: {
+            Admin* admin = static_cast<Admin*>(currentUser_);
+            
+            if (choice == 1) { // 修改名字
+                std::cout << getText("enter_username") << ": ";
+                std::getline(std::cin, newValue);
+                if (!newValue.empty()) {
+                    admin->setName(newValue);
+                }
+                
+                // 更新用户信息
+                updateSuccess = UserManager::getInstance().updateUserInfo(*admin);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    
+    if (updateSuccess) {
+        std::cout << getText("operation_success") << std::endl;
+    } else {
+        std::cout << getText("operation_failed") << std::endl;
+    }
+    
+    std::cout << getText("press_enter_to_continue") << std::endl;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+}

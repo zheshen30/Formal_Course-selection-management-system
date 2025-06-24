@@ -41,6 +41,8 @@
 #include <chrono>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
+#include <filesystem>
 
 // 项目主要头文件
 #include "../include/model/User.h"
@@ -56,7 +58,7 @@
 #include "../include/util/Logger.h"
 #include "../include/util/I18nManager.h"
 #include "../include/util/InputValidator.h"
-
+#include "../include/util/TestUtils.h"  // 包含测试工具函数
 
 // 使用命名空间
 using namespace std::chrono_literals; 
