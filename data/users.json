@@ -14,8 +14,8 @@
         "gender": "男",
         "id": "student001",
         "name": "李明",
-        "password": "f6a96d43083f5cb3ea53bc866df33e7e7734154795fe6f42ffffa4d5e22e5322",
-        "salt": "YNMyPyiRqnuRK52T",
+        "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+        "salt": "",
         "type": "STUDENT"
     },
     {
