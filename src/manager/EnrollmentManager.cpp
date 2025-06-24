@@ -113,7 +113,13 @@ bool EnrollmentManager::dropCourse(const std::string& studentId, const std::stri
     try {
         // 验证选课记录存在
         Enrollment* enrollment = getEnrollment(studentId, courseId);
-        if (!enrollment || enrollment->getStatus() != EnrollmentStatus::ENROLLED) {
+        if (!enrollment) {
+            Logger::getInstance().warning("退课失败：未找到学生 " + studentId + " 的课程 " + courseId + " 的选课记录");
+            throw SystemException(ErrorType::NOT_ENROLLED, "未找到该选课记录");
+        }
+        
+        // 检查选课状态
+        if (enrollment->getStatus() != EnrollmentStatus::ENROLLED) {
             Logger::getInstance().warning("退课失败：学生 " + studentId + " 未选课程 " + courseId);
             throw SystemException(ErrorType::NOT_ENROLLED, "学生未选择此课程");
         }

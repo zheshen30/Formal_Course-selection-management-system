@@ -2,7 +2,13 @@
     {
         "courseId": "CS101",
         "enrollmentTime": "2023-09-01 10:30:00",
-        "status": "ENROLLED",
+        "status": "DROPPED",
+        "studentId": "student001"
+    },
+    {
+        "courseId": "computer",
+        "enrollmentTime": "2025-06-23 21:39:56",
+        "status": "DROPPED",
         "studentId": "student001"
     }
 ]

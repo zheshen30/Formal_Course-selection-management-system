@@ -14,8 +14,8 @@
         "gender": "男",
         "id": "student001",
         "name": "李明",
-        "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
-        "salt": "",
+        "password": "f6a96d43083f5cb3ea53bc866df33e7e7734154795fe6f42ffffa4d5e22e5322",
+        "salt": "YNMyPyiRqnuRK52T",
         "type": "STUDENT"
     },
     {
@@ -48,6 +48,18 @@
         "name": "zheshen",
         "password": "66aff5985e09657a61b6bafac90694bdb5ebec65a806e01fab9cf55dfbd1980f",
         "salt": "yuYTWmRoAdutG08q",
+        "type": "STUDENT"
+    },
+    {
+        "age": 18,
+        "classInfo": "2401",
+        "contact": "mail",
+        "department": "computer",
+        "gender": "malw",
+        "id": "zz",
+        "name": "zz",
+        "password": "e571ee99db10d1af8350bd0395d5a2d731e45aea848d2c3d431c9c52529a4ba4",
+        "salt": "mKmUuPDCH6R6A6SK",
         "type": "STUDENT"
     }
 ]

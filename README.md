@@ -99,12 +99,13 @@ brew install openssl
    > 如果OpenSSL安装在非标准位置，可以使用：`cmake -DOPENSSL_ROOT_DIR=/path/to/openssl ..`
    > 如果想要进行单元测试和集成测试，需要在cmake后加-DCMAKE_BUILD_TYPE=Debug选项 **先确保正确安装了GoogleTest**
 
-4. 运行程序
+4. 运行程序(build目录下./course_system)
 
    **请完整阅读使用规范文档**[使用规范](docs/user_regulation.md)
    docs目录下的user_regulation.md文件
    
    **系统定义了严格的目录结构和使用规范,不遵守使用规范程序可能无法正常运行**
+
 
 
 ## 数据与日志存储
