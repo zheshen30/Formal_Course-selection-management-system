@@ -122,9 +122,6 @@ bool InputValidator::validatePassword(const std::string& password) {
 }
 
 bool InputValidator::validateChoice(const std::string& input, int min, int max, int& result) {
-    // 记录输入以便调试
-    std::cout << "验证输入选择: '" << input << "', 范围: [" << min << "-" << max << "]" << std::endl;
-    
     try {
         // 去除空白字符
         std::string trimmed = input;
@@ -133,14 +130,12 @@ bool InputValidator::validateChoice(const std::string& input, int min, int max, 
         
         // 检查是否为空
         if (trimmed.empty()) {
-            std::cout << "输入为空" << std::endl;
             return false;
         }
         
         // 检查是否只包含数字
         for (char c : trimmed) {
             if (!std::isdigit(c)) {
-                std::cout << "输入包含非数字字符: '" << c << "'" << std::endl;
                 return false;
             }
         }
@@ -150,40 +145,18 @@ bool InputValidator::validateChoice(const std::string& input, int min, int max, 
         
         // 检查范围
         bool isValid = (result >= min && result <= max);
-        std::cout << "解析结果: " << result << ", 是否有效: " << (isValid ? "是" : "否") << std::endl;
-        
         return isValid;
     } catch (const std::invalid_argument& e) {
-        std::cout << "解析整数时出现无效参数异常: " << e.what() << std::endl;
-        try {
-            Logger::getInstance().warning("输入验证错误（无效参数）: " + std::string(e.what()));
-        } catch (...) {
-            // 忽略日志错误
-        }
+        Logger::getInstance().warning("输入验证错误（无效参数）: " + std::string(e.what()));
         return false;
     } catch (const std::out_of_range& e) {
-        std::cout << "解析整数时出现超出范围异常: " << e.what() << std::endl;
-        try {
-            Logger::getInstance().warning("输入验证错误（超出范围）: " + std::string(e.what()));
-        } catch (...) {
-            // 忽略日志错误
-        }
+        Logger::getInstance().warning("输入验证错误（超出范围）: " + std::string(e.what()));
         return false;
     } catch (const std::exception& e) {
-        std::cout << "解析整数时出现其他异常: " << e.what() << std::endl;
-        try {
-            Logger::getInstance().warning("输入验证错误（其他）: " + std::string(e.what()));
-        } catch (...) {
-            // 忽略日志错误
-        }
+        Logger::getInstance().warning("输入验证错误（其他）: " + std::string(e.what()));
         return false;
     } catch (...) {
-        std::cout << "解析整数时出现未知异常" << std::endl;
-        try {
-            Logger::getInstance().warning("输入验证错误（未知异常）");
-        } catch (...) {
-            // 忽略日志错误
-        }
+        Logger::getInstance().warning("输入验证错误（未知异常）");
         return false;
     }
 }

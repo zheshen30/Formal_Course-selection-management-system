@@ -42,67 +42,43 @@ CourseSystem::CourseSystem()
 
 bool CourseSystem::initialize(const std::string& dataDir, const std::string& logDir) {
     try {
-        std::cout << "==== CourseSystem::initialize开始 ====" << std::endl;
-    
         // 初始化国际化管理器（这是初始化最关键的部分，因为UI文本都依赖于此）
-        std::cout << "初始化国际化管理器..." << std::endl;
         I18nManager& i18n = I18nManager::getInstance();
         if (!i18n.initialize(dataDir)) {
-            std::cerr << "初始化国际化系统失败" << std::endl;
+            Logger::getInstance().error("初始化国际化系统失败");
             return false;
         }
-        std::cout << "国际化管理器初始化成功" << std::endl;
         
         // 先尝试设置语言，确保可以显示UI
-        bool langResult = selectLanguage(Language::CHINESE);
-        std::cout << "设置默认语言: " << (langResult ? "成功" : "失败") << std::endl;
+        selectLanguage(Language::CHINESE);
         
         // 在这里初始化日志系统，避免与CourseSystem产生循环依赖
-        std::cout << "初始化日志系统..." << std::endl;
         Logger& logger = Logger::getInstance();
         bool logResult = logger.initialize(logDir, LogLevel::DEBUG);
-        std::cout << "日志系统初始化: " << (logResult ? "成功" : "失败") << std::endl;
         
-        // 测试日志功能
-        if (logResult) {
-            logger.debug("这是一条调试日志消息");
-            logger.info("CourseSystem正在初始化");
-            std::cout << "已写入测试日志记录" << std::endl;
-        }
+
         
         // 初始化数据管理器
-        std::cout << "初始化数据管理器..." << std::endl;
         DataManager& dataManager = DataManager::getInstance();
         dataManager.setDataDirectory(dataDir);
-        std::cout << "设置数据目录: " << dataDir << std::endl;
         
         try {
             // 加载用户数据
-            std::cout << "加载用户数据..." << std::endl;
             UserManager& userManager = UserManager::getInstance();
             bool userDataLoaded = userManager.loadData();
-            std::cout << "用户数据加载: " << (userDataLoaded ? "成功" : "失败") << std::endl;
             
             if (!userDataLoaded) {
-                std::cerr << "警告: 用户数据加载失败，系统可能无法正常工作" << std::endl;
-                if (logResult) {
-                    logger.warning("用户数据加载失败，系统可能无法正常工作");
-                }
+                logger.warning("用户数据加载失败，系统可能无法正常工作");
             }
             
             // 加载课程数据
-            std::cout << "加载课程数据..." << std::endl;
             CourseManager& courseManager = CourseManager::getInstance();
-            bool courseDataLoaded = courseManager.loadData();
-            std::cout << "课程数据加载: " << (courseDataLoaded ? "成功" : "失败") << std::endl;
+            courseManager.loadData();
             
             // 加载选课数据
-            std::cout << "加载选课数据..." << std::endl;
             EnrollmentManager& enrollmentManager = EnrollmentManager::getInstance();
-            bool enrollmentDataLoaded = enrollmentManager.loadData();
-            std::cout << "选课数据加载: " << (enrollmentDataLoaded ? "成功" : "失败") << std::endl;
+            enrollmentManager.loadData();
             
-            std::cout << "CourseSystem初始化完成，标记为已初始化" << std::endl;
             initialized_ = true;
             
             if (logResult) {
@@ -110,38 +86,32 @@ bool CourseSystem::initialize(const std::string& dataDir, const std::string& log
             }
             return true;
         } catch (const std::exception& e) {
-            std::cerr << "初始化CourseSystem时发生异常: " << e.what() << std::endl;
-            if (logResult) {
-                logger.error("初始化CourseSystem时发生异常: " + std::string(e.what()));
-            }
+            logger.error("初始化CourseSystem时发生异常: " + std::string(e.what()));
             return false;
         }
     } catch (const std::exception& e) {
-        std::cerr << "初始化CourseSystem时发生严重异常: " << e.what() << std::endl;
+        Logger::getInstance().error("初始化CourseSystem时发生严重异常: " + std::string(e.what()));
         return false;
     } catch (...) {
-        std::cerr << "初始化CourseSystem时发生未知异常" << std::endl;
+        Logger::getInstance().error("初始化CourseSystem时发生未知异常");
         return false;
     }
 }
 
 int CourseSystem::run() {
     if (!initialized_) {
-        std::cerr << "系统未初始化" << std::endl;
+        Logger::getInstance().error("系统未初始化");
         return -1;
     }
     
     running_ = true;
-    std::cout << "系统启动成功，准备显示欢迎界面" << std::endl;
     
     // 显示欢迎界面
     showWelcome();
-    std::cout << "欢迎界面显示完成，准备选择语言" << std::endl;
     
     try {
         // 检查输入是否来自终端
         bool isTerminal = isatty(fileno(stdin));
-        std::cout << "输入来源 / Input source: " << (isTerminal ? "终端 / Terminal" : "非终端 / Non-terminal (pipe/redirect)") << std::endl;
         
         // 选择语言
         std::cout << "请选择语言 / Please select language:" << std::endl;
@@ -155,13 +125,11 @@ int CourseSystem::run() {
         
         // 如果输入不是来自终端，直接使用默认选择
         if (!isTerminal) {
-            std::cout << "检测到非终端输入，使用默认选择: 中文" << std::endl;
             choice = 1;
         } else {
             do {
                 std::cout << "> ";
                 std::getline(std::cin, input);
-                std::cout << "收到输入: [" << input << "]" << std::endl;
                 
                 // 去除输入两端的空白字符
                 input.erase(0, input.find_first_not_of(" \t\r\n"));
@@ -174,64 +142,53 @@ int CourseSystem::run() {
                     continue;
                 }
                 
-                // 直接检查输入是否为"1"或"2"
+                // 直接检查输入是否为"1"或"2"或"3"
                 if (input == "1") {
                     choice = 1;
-                    std::cout << "检测到有效输入: 1" << std::endl;
                     break;
                 } else if (input == "2") {
                     choice = 2;
-                    std::cout << "检测到有效输入: 2" << std::endl;
+                    break;
+                } else if (input == "3") {
+                    choice = 3;
                     break;
                 } else {
                     std::cout << "输入无效，请输入数字 / Invalid input, please enter a number" << std::endl;
                     
                     if (attempts >= MAX_ATTEMPTS) {
-                        std::cout << "多次输入无效，默认选择中文 / Multiple invalid inputs, defaulting to Chinese" << std::endl;
-                        choice = 1; // 默认选择中文
+                        std::cout << "多次输入无效，默认选择退出 / Multiple invalid inputs, defaulting to exit" << std::endl;
+                        choice = 3; // 默认选择退出
                         break;
                     }
                 }
             } while (true);
         }
         
-        std::cout << "选择了选项: " << choice << std::endl;
-        
         // 设置语言
         Language language = (choice == 1) ? Language::CHINESE : Language::ENGLISH;
-        std::cout << "尝试设置语言: " << I18nManager::languageToString(language) << std::endl;
         if (!selectLanguage(language)) {
-            std::cout << "语言设置失败，使用默认语言" << std::endl;
+            Logger::getInstance().warning("语言设置失败，使用默认语言");
         }
-        
-        std::cout << "准备进入主循环" << std::endl;
         
         // 主循环
         while (running_) {
             try {
-                std::cout << "检查用户登录状态..." << std::endl;
                 // 如果未登录，显示登录界面
                 if (!currentUser_) {
-                    std::cout << "用户未登录，显示主菜单" << std::endl;
                     showMainMenu();
                 } else {
-                    std::cout << "用户已登录，检查用户类型" << std::endl;
                     // 根据用户类型显示不同菜单
                     switch (currentUser_->getType()) {
                         case UserType::ADMIN:
-                            std::cout << "显示管理员菜单" << std::endl;
                             showAdminMenu();
                             break;
                         case UserType::TEACHER:
-                            std::cout << "显示教师菜单" << std::endl;
                             showTeacherMenu();
                             break;
                         case UserType::STUDENT:
-                            std::cout << "显示学生菜单" << std::endl;
                             showStudentMenu();
                             break;
                         default:
-                            std::cout << "未知的用户类型，注销登录" << std::endl;
                             Logger::getInstance().error("未知的用户类型");
                             logout();
                             break;
@@ -258,11 +215,11 @@ int CourseSystem::run() {
         return 0;
     }
     catch (const std::exception& e) {
-        std::cerr << "运行时异常: " << e.what() << std::endl;
+        Logger::getInstance().error("运行时异常: " + std::string(e.what()));
         return -1;
     }
     catch (...) {
-        std::cerr << "未知异常" << std::endl;
+        Logger::getInstance().error("未知异常");
         return -1;
     }
 }
@@ -330,11 +287,10 @@ bool CourseSystem::checkPermission(UserType requiredUserType) const {
 
 bool CourseSystem::selectLanguage(Language language) {
     try {
-        std::cout << "正在设置语言: " << I18nManager::languageToString(language) << std::endl;
         bool result = I18nManager::getInstance().setLanguage(language);
         
         if (result) {
-            std::cout << "语言设置成功: " << I18nManager::languageToString(language) << std::endl;
+            Logger::getInstance().info("语言设置成功: " + I18nManager::languageToString(language));
             
             // 验证一些关键键是否可获取
             std::vector<std::string> testKeys = {"main_menu_title", "login", "exit"};
@@ -342,31 +298,26 @@ bool CourseSystem::selectLanguage(Language language) {
             
             for (const auto& key : testKeys) {
                 std::string text = getText(key);
-                std::cout << "测试键 [" << key << "] = \"" << text << "\"" << std::endl;
-                
                 if (text == key) {  // 如果getText返回键本身，说明没找到对应的文本
                     allKeysFound = false;
                 }
             }
             
             if (!allKeysFound) {
-                std::cout << "警告: 部分关键文本键无法获取，菜单可能无法正常显示" << std::endl;
                 Logger::getInstance().warning("部分关键文本键无法获取，菜单可能无法正常显示");
             }
             
             return true;
         } else {
-            std::cout << "语言设置失败: " << I18nManager::languageToString(language) << std::endl;
             Logger::getInstance().error("语言设置失败: " + I18nManager::languageToString(language));
             
             // 尝试回退到另一种语言
             Language fallbackLanguage = (language == Language::CHINESE) ? Language::ENGLISH : Language::CHINESE;
-            std::cout << "尝试回退到: " << I18nManager::languageToString(fallbackLanguage) << std::endl;
+            Logger::getInstance().info("尝试回退到: " + I18nManager::languageToString(fallbackLanguage));
             
             return I18nManager::getInstance().setLanguage(fallbackLanguage);
         }
     } catch (const std::exception& e) {
-        std::cout << "设置语言时发生异常: " << e.what() << std::endl;
         Logger::getInstance().error("设置语言时发生异常: " + std::string(e.what()));
         return false;
     }
@@ -419,16 +370,12 @@ void CourseSystem::showWelcome() const {
 }
 
 void CourseSystem::showMainMenu() {
-    std::cout << "开始显示主菜单..." << std::endl;
-    
     try {
         // 检查输入是否来自终端
         bool isTerminal = isatty(fileno(stdin));
-        std::cout << "输入来源: " << (isTerminal ? "终端" : "非终端(管道/重定向)") << std::endl;
         
         // 确保输入流处于良好状态
         if (std::cin.fail() || !std::cin.good()) {
-            std::cout << "输入流状态异常，正在重置..." << std::endl;
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
@@ -442,36 +389,28 @@ void CourseSystem::showMainMenu() {
         std::string menuTitle;
         try {
             menuTitle = getText("main_menu_title");
-            std::cout << "获取到主菜单标题: " << menuTitle << std::endl;
         } catch (...) {
             menuTitle = "主菜单 / Main Menu";
-            std::cout << "获取主菜单标题失败，使用默认值" << std::endl;
         }
         
         // 获取登录和退出选项文本，提供后备选项
         std::string loginText, switchLanguageText, exitText;
         try {
             loginText = getText("login");
-            std::cout << "获取到登录选项: " << loginText << std::endl;
         } catch (...) {
             loginText = "登录 / Login";
-            std::cout << "获取登录选项失败，使用默认值" << std::endl;
         }
         
         try {
             switchLanguageText = getText("switch_language");
-            std::cout << "获取到切换语言选项: " << switchLanguageText << std::endl;
         } catch (...) {
             switchLanguageText = "切换语言 / Switch Language";
-            std::cout << "获取切换语言选项失败，使用默认值" << std::endl;
         }
         
         try {
             exitText = getText("exit");
-            std::cout << "获取到退出选项: " << exitText << std::endl;
         } catch (...) {
             exitText = "退出 / Exit";
-            std::cout << "获取退出选项失败，使用默认值" << std::endl;
         }
         
         // 显示菜单选项
@@ -487,13 +426,11 @@ void CourseSystem::showMainMenu() {
         
         // 如果输入不是来自终端，直接使用默认选择
         if (!isTerminal) {
-            std::cout << "检测到非终端输入，使用默认选择: 退出" << std::endl;
             choice = 3; // 默认退出
         } else {
             do {
                 std::cout << "> ";
                 std::getline(std::cin, input);
-                std::cout << "收到输入: [" << input << "]" << std::endl;
                 
                 // 去除输入两端的空白字符
                 input.erase(0, input.find_first_not_of(" \t\r\n"));
@@ -509,15 +446,12 @@ void CourseSystem::showMainMenu() {
                 // 直接检查输入是否为"1"或"2"或"3"
                 if (input == "1") {
                     choice = 1;
-                    std::cout << "检测到有效输入: 1" << std::endl;
                     break;
                 } else if (input == "2") {
                     choice = 2;
-                    std::cout << "检测到有效输入: 2" << std::endl;
                     break;
                 } else if (input == "3") {
                     choice = 3;
-                    std::cout << "检测到有效输入: 3" << std::endl;
                     break;
                 } else {
                     std::cout << "输入无效，请输入数字 / Invalid input, please enter a number" << std::endl;
@@ -530,8 +464,6 @@ void CourseSystem::showMainMenu() {
                 }
             } while (true);
         }
-        
-        std::cout << "选择了选项: " << choice << std::endl;
         
         if (choice == 1) {
             // 登录
@@ -553,13 +485,10 @@ void CourseSystem::showMainMenu() {
             
             std::cout << userPrompt << ": ";
             std::getline(std::cin, userId);
-            std::cout << "输入的用户ID: " << userId << std::endl;
             
             std::cout << passPrompt << ": ";
             std::getline(std::cin, password);
-            std::cout << "密码输入完成" << std::endl;
             
-            std::cout << "尝试登录..." << std::endl;
             try {
                 if (login(userId, password)) {
                     std::string successMsg;
@@ -2777,11 +2706,7 @@ template std::string CourseSystem::getFormattedText(const std::string& key, int)
 template std::string CourseSystem::getFormattedText(const std::string& key, const std::string&) const;
 template std::string CourseSystem::getFormattedText(const std::string& key, const char*) const;
 
-// 在文件头部添加clearScreen函数的声明
-void CourseSystem::clearScreen() {
-    // 使用控制字符清屏
-    std::cout << "\033[2J\033[1;1H";
-}
+
 
 void CourseSystem::handleTeacherFunctions(int choice) {
     // 这里只是示例，实际应该实现完整的教师功能

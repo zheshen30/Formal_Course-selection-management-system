@@ -16,6 +16,7 @@
  */
 #include "../../include/model/User.h"
 #include "../../include/system/SystemException.h"
+#include "../../include/util/Logger.h"
 
 // OpenSSL库头文件
 #include <openssl/sha.h>
@@ -68,13 +69,13 @@ bool User::verifyPassword(const std::string& password) const {
     // 方法1：纯哈希值比较（针对特殊账户且盐值为空）
     if (salt_.empty()) {
         if (id_ == "admin001" || id_ == "teacher001" || id_ == "student001") {
-            std::cout << "特殊账户处理：使用纯哈希验证（无盐值）" << std::endl;
+            Logger::getInstance().debug("特殊账户处理：使用纯哈希验证（无盐值）");
             // 计算纯哈希值并与存储的哈希值比较
             std::string pureHash = generatePasswordHash(password, "");
-            std::cout << "  输入密码的纯哈希: " << pureHash << std::endl;
-            std::cout << "  存储的哈希: " << password_ << std::endl;
+            Logger::getInstance().debug("输入密码的纯哈希: " + pureHash);
+            Logger::getInstance().debug("存储的哈希: " + password_);
             bool directMatch = (password_ == pureHash);
-            std::cout << "  纯哈希匹配: " << (directMatch ? "是" : "否") << std::endl;
+            Logger::getInstance().debug("纯哈希匹配: " + std::string(directMatch ? "是" : "否"));
             return directMatch;
         }
     }
@@ -82,17 +83,15 @@ bool User::verifyPassword(const std::string& password) const {
     // 方法2：密码和盐值拼接后哈希（标准方法）
     std::string combinedHash = generatePasswordHash(password, salt_);
     
-    std::cout << "验证密码:" << std::endl;
-    std::cout << "  用户ID: " << id_ << std::endl;
-    std::cout << "  输入密码: " << password << std::endl;
-    std::cout << "  盐值: " << salt_ << std::endl;
-    std::cout << "  密码+盐值哈希: " << combinedHash << std::endl;
-    std::cout << "  存储的哈希: " << password_ << std::endl;
+    Logger::getInstance().debug("验证密码：" + id_);
+    Logger::getInstance().debug("盐值: " + salt_);
+    Logger::getInstance().debug("密码+盐值哈希: " + combinedHash);
+    Logger::getInstance().debug("存储的哈希: " + password_);
     
     // 判断是否匹配
     bool combinedMatch = password_ == combinedHash;
     
-    std::cout << "  哈希匹配: " << (combinedMatch ? "是" : "否") << std::endl;
+    Logger::getInstance().debug("哈希匹配: " + std::string(combinedMatch ? "是" : "否"));
     
     return combinedMatch;
 }

@@ -28,25 +28,32 @@ namespace fs = std::filesystem;
 
 // 获取当前日期时间的字符串表示（北京时间，UTC+8）
 std::string getCurrentTimeString() {
-    // 定义北京时间相对UTC的偏移量（秒）
-    const int BEIJING_OFFSET = 8 * 3600; // 8小时 = 8 * 3600秒
-    
-    // 获取当前UTC时间戳
+    // 获取当前系统时间点
     auto now = std::chrono::system_clock::now();
+    
+    // 转换为time_t（秒级时间戳）
     auto now_time_t = std::chrono::system_clock::to_time_t(now);
     
-    // 加上北京时间偏移
-    time_t beijing_time_t = now_time_t + BEIJING_OFFSET;
+    // 转换为UTC结构化时间
+    std::tm* gmt_tm = std::gmtime(&now_time_t);
+    if (!gmt_tm) {
+        return "ERROR_TIME";
+    }
+    
+    // 实施北京时间转换 (UTC+8)
+    // 增加8小时
+    gmt_tm->tm_hour += 8;
+    
+    // 处理时间进位
+    std::mktime(gmt_tm);
     
     // 获取毫秒部分
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
-    
-    // 转换为tm结构（使用gmtime避免本地时区影响）
-    std::tm beijing_tm = *std::gmtime(&beijing_time_t);
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now.time_since_epoch()) % 1000;
     
     // 格式化时间字符串
     std::stringstream ss;
-    ss << std::put_time(&beijing_tm, "%Y-%m-%d %H:%M:%S");
+    ss << std::put_time(gmt_tm, "%Y-%m-%d %H:%M:%S");
     ss << '.' << std::setfill('0') << std::setw(3) << ms.count();
     
     return ss.str();
@@ -59,7 +66,6 @@ Logger& Logger::getInstance() {
 
 Logger::Logger() : initialized_(false), logLevel_(LogLevel::INFO) {
     // 默认构造，什么都不做
-    std::cout << "Logger实例创建" << std::endl;
 }
 
 Logger::~Logger() {
@@ -67,16 +73,12 @@ Logger::~Logger() {
     if (infoFile_.is_open()) infoFile_.close();
     if (warnFile_.is_open()) warnFile_.close();
     if (errorFile_.is_open()) errorFile_.close();
-    std::cout << "Logger实例销毁" << std::endl;
 }
 
 bool Logger::initialize(const std::string& logDir, LogLevel logLevel) {
     try {
-        std::cout << "开始初始化Logger..." << std::endl;
-        
         // 防止重复初始化
         if (initialized_) {
-            std::cout << "Logger已经初始化，直接返回" << std::endl;
             return true;
         }
         
@@ -85,7 +87,6 @@ bool Logger::initialize(const std::string& logDir, LogLevel logLevel) {
         
         // 确保日志目录存在
         if (!fs::exists(logDir)) {
-            std::cout << "创建日志目录: " << logDir << std::endl;
             fs::create_directories(logDir);
         }
         
@@ -94,11 +95,6 @@ bool Logger::initialize(const std::string& logDir, LogLevel logLevel) {
         std::string warnPath = logDir + "/simple_warn.log";
         std::string errorPath = logDir + "/simple_error.log";
         
-        std::cout << "打开日志文件:\n" << 
-            "  Info: " << infoPath << "\n" <<
-            "  Warn: " << warnPath << "\n" <<
-            "  Error: " << errorPath << std::endl;
-        
         // 打开日志文件，使用追加模式
         infoFile_.open(infoPath, std::ios::app);
         warnFile_.open(warnPath, std::ios::app);
@@ -106,7 +102,6 @@ bool Logger::initialize(const std::string& logDir, LogLevel logLevel) {
         
         // 检查文件是否成功打开
         if (!infoFile_.is_open() || !warnFile_.is_open() || !errorFile_.is_open()) {
-            std::cerr << "无法打开一个或多个日志文件" << std::endl;
             return false;
         }
         
@@ -117,13 +112,10 @@ bool Logger::initialize(const std::string& logDir, LogLevel logLevel) {
         std::string initMsg = "日志系统初始化成功，日志目录：" + logDir;
         info(initMsg);
         
-        std::cout << "Logger初始化完成" << std::endl;
         return true;
-    } catch (const std::exception& e) {
-        std::cerr << "初始化日志系统失败: " << e.what() << std::endl;
+    } catch (const std::exception&) {
         return false;
     } catch (...) {
-        std::cerr << "初始化日志系统失败: 未知错误" << std::endl;
         return false;
     }
 }
@@ -133,10 +125,15 @@ void Logger::debug(const std::string& message) {
     
     std::string logMsg = "[" + getCurrentTimeString() + "] [DEBUG] " + message;
     
-    // 简单模式下，调试消息只输出到控制台
-    std::cout << logMsg << std::endl;
-    
-    // 不需要锁，因为只输出到控制台
+    // 只写入到文件，不输出到屏幕
+    try {
+        if (initialized_ && infoFile_.is_open()) {
+            std::lock_guard<std::mutex> lock(mutex_);
+            infoFile_ << logMsg << std::endl;
+        }
+    } catch (...) {
+        // 忽略写入错误
+    }
 }
 
 void Logger::info(const std::string& message) {
@@ -144,13 +141,10 @@ void Logger::info(const std::string& message) {
     
     std::string logMsg = "[" + getCurrentTimeString() + "] [INFO] " + message;
     
-    // 输出到控制台
-    std::cout << logMsg << std::endl;
-    
-    // 写入到日志文件
+    // 只写入到日志文件，不输出到屏幕
     try {
         if (initialized_ && infoFile_.is_open()) {
-            std::lock_guard<std::mutex> lock(mutex_);  // 只在文件写入时加锁
+            std::lock_guard<std::mutex> lock(mutex_);
             infoFile_ << logMsg << std::endl;
         }
     } catch (...) {
@@ -163,13 +157,10 @@ void Logger::warning(const std::string& message) {
     
     std::string logMsg = "[" + getCurrentTimeString() + "] [WARNING] " + message;
     
-    // 输出到控制台
-    std::cerr << logMsg << std::endl;
-    
-    // 写入到日志文件
+    // 只写入到日志文件，不输出到屏幕
     try {
         if (initialized_ && warnFile_.is_open()) {
-            std::lock_guard<std::mutex> lock(mutex_);  // 只在文件写入时加锁
+            std::lock_guard<std::mutex> lock(mutex_);
             warnFile_ << logMsg << std::endl;
             // 同时写入信息日志文件
             if (infoFile_.is_open()) {
@@ -186,13 +177,10 @@ void Logger::error(const std::string& message) {
     
     std::string logMsg = "[" + getCurrentTimeString() + "] [ERROR] " + message;
     
-    // 输出到控制台
-    std::cerr << logMsg << std::endl;
-    
-    // 写入到日志文件
+    // 只写入到日志文件，不输出到屏幕
     try {
         if (initialized_ && errorFile_.is_open()) {
-            std::lock_guard<std::mutex> lock(mutex_);  // 只在文件写入时加锁
+            std::lock_guard<std::mutex> lock(mutex_);
             errorFile_ << logMsg << std::endl;
             // 同时写入信息和警告日志文件
             if (warnFile_.is_open()) {
@@ -212,13 +200,10 @@ void Logger::critical(const std::string& message) {
     
     std::string logMsg = "[" + getCurrentTimeString() + "] [CRITICAL] " + message;
     
-    // 输出到控制台
-    std::cerr << logMsg << std::endl;
-    
-    // 写入到日志文件
+    // 只写入到日志文件，不输出到屏幕
     try {
         if (initialized_ && errorFile_.is_open()) {
-            std::lock_guard<std::mutex> lock(mutex_);  // 只在文件写入时加锁
+            std::lock_guard<std::mutex> lock(mutex_);
             errorFile_ << logMsg << std::endl;
             // 同时写入信息和警告日志文件
             if (warnFile_.is_open()) {

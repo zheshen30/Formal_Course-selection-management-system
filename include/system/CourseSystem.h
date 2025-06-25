@@ -149,10 +149,7 @@ private:
      */
     CourseSystem& operator=(const CourseSystem&) = delete;
     
-    /**
-     * @brief 清屏函数
-     */
-    void clearScreen();
+
     
     /**
      * @brief 显示欢迎界面

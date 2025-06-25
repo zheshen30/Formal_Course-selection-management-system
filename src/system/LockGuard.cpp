@@ -28,7 +28,6 @@ LockGuard::LockGuard(std::mutex& mutex, unsigned long timeout)
             mutex_.lock();
             locked_ = true;
         } catch (const std::exception& e) {
-            std::cerr << "锁定失败: " << e.what() << std::endl;
             throw SystemException(ErrorType::LOCK_FAILURE, "获取锁失败: " + std::string(e.what()));
         }
     } else {
@@ -46,7 +45,6 @@ LockGuard::LockGuard(std::mutex& mutex, unsigned long timeout)
         }
         
         if (!locked_) {
-            std::cerr << "获取锁超时" << std::endl;
             throw SystemException(ErrorType::LOCK_TIMEOUT, "获取锁超时");
         }
     }

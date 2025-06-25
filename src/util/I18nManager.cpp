@@ -43,13 +43,11 @@ bool I18nManager::initialize(const std::string& dataDir) {
     
     dataDir_ = dataDir;
     initialized_ = false;
-    std::cout << "I18nManager初始化开始，数据目录: " << dataDir << std::endl;
     
     // 确保数据目录存在
     DataManager& dataManager = DataManager::getInstance();
     if (!dataManager.createDirectory(dataDir_)) {
         Logger::getInstance().error("无法创建或访问语言数据目录: " + dataDir_);
-        std::cout << "错误: 无法创建或访问语言数据目录: " << dataDir_ << std::endl;
         return false;
     }
     
@@ -59,7 +57,6 @@ bool I18nManager::initialize(const std::string& dataDir) {
     
     if (!chineseLoaded && !englishLoaded) {
         Logger::getInstance().error("无法加载任何语言文件");
-        std::cout << "错误: 无法加载任何语言文件" << std::endl;
         return false;
     }
     
@@ -68,7 +65,6 @@ bool I18nManager::initialize(const std::string& dataDir) {
         (currentLanguage_ == Language::ENGLISH && !englishLoaded && chineseLoaded)) {
         currentLanguage_ = (chineseLoaded) ? Language::CHINESE : Language::ENGLISH;
         Logger::getInstance().warning("切换到可用语言: " + languageToString(currentLanguage_));
-        std::cout << "警告: 切换到可用语言: " << languageToString(currentLanguage_) << std::endl;
     }
     
     // 加载默认语言
@@ -76,10 +72,8 @@ bool I18nManager::initialize(const std::string& dataDir) {
     if (result) {
         initialized_ = true;
         Logger::getInstance().info("国际化系统初始化成功，数据目录：" + dataDir);
-        std::cout << "国际化系统初始化成功，数据目录：" << dataDir << std::endl;
     } else {
         Logger::getInstance().error("国际化系统初始化失败");
-        std::cout << "错误: 国际化系统初始化失败" << std::endl;
     }
     
     return initialized_;
@@ -122,7 +116,7 @@ std::string I18nManager::getText(const std::string& key) const {
     try {
         // 先检查是否初始化
         if (!initialized_) {
-            std::cout << "警告: I18nManager未初始化，使用默认文本: " << key << std::endl;
+            Logger::getInstance().warning("I18nManager未初始化，使用默认文本: " + key);
             
             // 查找默认文本
             auto defaultIt = defaultTexts.find(key);
@@ -150,7 +144,7 @@ std::string I18nManager::getText(const std::string& key) const {
         return key;
     }
     catch (const std::exception& e) {
-        std::cerr << "getText发生异常: " << e.what() << std::endl;
+        Logger::getInstance().error("getText发生异常: " + std::string(e.what()));
         
         // 即使发生异常，也尝试返回默认文本
         auto defaultIt = defaultTexts.find(key);
@@ -256,7 +250,7 @@ Language I18nManager::stringToLanguage(const std::string& languageStr) {
 }
 
 bool I18nManager::createDefaultLanguageFile(Language language) {
-    std::cout << "创建默认语言文件: " << languageToString(language) << std::endl;
+    Logger::getInstance().info("创建默认语言文件: " + languageToString(language));
     
     nlohmann::json defaultTexts;
     defaultTexts["main_menu_title"] = (language == Language::CHINESE) ? "主菜单" : "Main Menu";
@@ -286,7 +280,7 @@ bool I18nManager::createDefaultLanguageFile(Language language) {
         // 直接使用文件流写入文件
         std::ofstream file(filePath);
         if (!file.is_open()) {
-            std::cerr << "无法创建语言文件: " << filePath << std::endl;
+            Logger::getInstance().error("无法创建语言文件: " + filePath);
             return false;
         }
         
@@ -294,17 +288,17 @@ bool I18nManager::createDefaultLanguageFile(Language language) {
         file.close();
         
         if (!std::filesystem::exists(filePath)) {
-            std::cerr << "创建语言文件后文件不存在: " << filePath << std::endl;
+            Logger::getInstance().error("创建语言文件后文件不存在: " + filePath);
             return false;
         }
         
-        std::cout << "成功创建默认语言文件: " << filePath << std::endl;
+        Logger::getInstance().info("成功创建默认语言文件: " + filePath);
         return true;
     } catch (const std::exception& e) {
-        std::cerr << "创建默认语言文件时发生异常: " << e.what() << std::endl;
+        Logger::getInstance().error("创建默认语言文件时发生异常: " + std::string(e.what()));
         return false;
     } catch (...) {
-        std::cerr << "创建默认语言文件时发生未知异常" << std::endl;
+        Logger::getInstance().error("创建默认语言文件时发生未知异常");
         return false;
     }
 }
@@ -312,23 +306,23 @@ bool I18nManager::createDefaultLanguageFile(Language language) {
 bool I18nManager::loadLanguageFile(Language language) {
     try {
         std::string filePath = getLanguageFilePath(language);
-        std::cout << "尝试加载语言文件: " << filePath << std::endl;
+        Logger::getInstance().debug("尝试加载语言文件: " + filePath);
         
         // 检查文件是否存在
         bool fileExists = std::filesystem::exists(filePath);
         if (!fileExists) {
-            std::cout << "语言文件不存在: " << filePath << std::endl;
-            std::cout << "尝试创建默认语言文件..." << std::endl;
+            Logger::getInstance().warning("语言文件不存在: " + filePath);
+            Logger::getInstance().info("尝试创建默认语言文件...");
             
             if (!createDefaultLanguageFile(language)) {
-                std::cout << "创建默认语言文件失败" << std::endl;
+                Logger::getInstance().error("创建默认语言文件失败");
                 return false;
             }
             
             // 重新检查文件是否存在
             fileExists = std::filesystem::exists(filePath);
             if (!fileExists) {
-                std::cout << "创建后文件仍不存在" << std::endl;
+                Logger::getInstance().error("创建后文件仍不存在");
                 return false;
             }
         }
@@ -336,7 +330,7 @@ bool I18nManager::loadLanguageFile(Language language) {
         // 读取文件内容
         std::ifstream file(filePath);
         if (!file.is_open()) {
-            std::cout << "无法打开语言文件: " << filePath << std::endl;
+            Logger::getInstance().error("无法打开语言文件: " + filePath);
             return false;
         }
         
@@ -344,11 +338,11 @@ bool I18nManager::loadLanguageFile(Language language) {
         file.close();
         
         if (jsonStr.empty()) {
-            std::cout << "语言文件为空: " << filePath << std::endl;
+            Logger::getInstance().error("语言文件为空: " + filePath);
             return false;
         }
         
-        std::cout << "语言文件内容大小: " << jsonStr.size() << " 字节" << std::endl;
+        Logger::getInstance().debug("语言文件内容大小: " + std::to_string(jsonStr.size()) + " 字节");
         
         // 解析JSON
         try {
@@ -373,28 +367,28 @@ bool I18nManager::loadLanguageFile(Language language) {
             
             // 检查是否加载了任何键值对
             if (tempMap.empty()) {
-                std::cout << "警告: 语言文件没有包含任何键值对" << std::endl;
+                Logger::getInstance().warning("语言文件没有包含任何键值对");
                 return false;
             }
             
             // 全部处理完成后，替换现有的映射表
             textMap_ = std::move(tempMap);
             
-            std::cout << "成功加载语言文件: " << filePath << "，共 " << textMap_.size() << " 个文本项" << std::endl;
+            Logger::getInstance().info("成功加载语言文件: " + filePath + "，共 " + std::to_string(textMap_.size()) + " 个文本项");
             return true;
         } catch (const json::exception& e) {
-            std::cout << "解析语言文件JSON失败: " << e.what() << std::endl;
+            Logger::getInstance().error("解析语言文件JSON失败: " + std::string(e.what()));
             
             // 尝试创建新的默认文件
-            std::cout << "尝试创建新的默认语言文件..." << std::endl;
+            Logger::getInstance().info("尝试创建新的默认语言文件...");
             if (createDefaultLanguageFile(language)) {
                 // 再次尝试加载，但避免无限递归
-                std::cout << "重新尝试加载默认语言文件..." << std::endl;
+                Logger::getInstance().info("重新尝试加载默认语言文件...");
                 
                 // 直接读取新创建的文件
                 std::ifstream newFile(filePath);
                 if (!newFile.is_open()) {
-                    std::cout << "无法打开新创建的语言文件" << std::endl;
+                    Logger::getInstance().error("无法打开新创建的语言文件");
                     return false;
                 }
                 
@@ -412,10 +406,10 @@ bool I18nManager::loadLanguageFile(Language language) {
                     }
                     
                     textMap_ = std::move(newTempMap);
-                    std::cout << "成功加载默认语言文件，共 " << textMap_.size() << " 个文本项" << std::endl;
+                    Logger::getInstance().info("成功加载默认语言文件，共 " + std::to_string(textMap_.size()) + " 个文本项");
                     return true;
                 } catch (...) {
-                    std::cout << "解析新创建的默认语言文件失败" << std::endl;
+                    Logger::getInstance().error("解析新创建的默认语言文件失败");
                     return false;
                 }
             }
@@ -423,10 +417,10 @@ bool I18nManager::loadLanguageFile(Language language) {
             return false;
         }
     } catch (const std::exception& e) {
-        std::cout << "加载语言文件时发生异常: " << e.what() << std::endl;
+        Logger::getInstance().error("加载语言文件时发生异常: " + std::string(e.what()));
         return false;
     } catch (...) {
-        std::cout << "加载语言文件时发生未知异常" << std::endl;
+        Logger::getInstance().error("加载语言文件时发生未知异常");
         return false;
     }
 }
@@ -458,7 +452,6 @@ std::string I18nManager::getLanguageFilePath(Language language) const {
         }
     }
     
-    std::cout << "语言文件路径: " << fullPath << std::endl;
     return fullPath;
 }
 

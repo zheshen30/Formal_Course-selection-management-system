@@ -30,22 +30,14 @@ std::string getDataDir() {
     
     // 获取绝对路径
     std::filesystem::path absolutePath = std::filesystem::absolute(dataDir);
-    std::cout << "数据目录绝对路径: " << absolutePath.string() << std::endl;
     
     // 确保目录存在
     try {
         if (!std::filesystem::exists(absolutePath)) {
-            std::cout << "数据目录不存在，正在创建..." << std::endl;
             std::filesystem::create_directories(absolutePath);
         }
     } catch (const std::exception& e) {
         std::cerr << "创建数据目录失败: " << e.what() << std::endl;
-    }
-    
-    // 检查关键文件
-    if (!std::filesystem::exists(absolutePath / "Chinese.json") || 
-        !std::filesystem::exists(absolutePath / "English.json")) {
-        std::cout << "警告: 关键语言文件不存在，需要创建默认语言文件" << std::endl;
     }
     
     return absolutePath.string();
@@ -58,12 +50,10 @@ std::string getLogDir() {
     
     // 获取绝对路径
     std::filesystem::path absolutePath = std::filesystem::absolute(logDir);
-    std::cout << "日志目录绝对路径: " << absolutePath.string() << std::endl;
     
     // 确保目录存在
     try {
         if (!std::filesystem::exists(absolutePath)) {
-            std::cout << "日志目录不存在，正在创建..." << std::endl;
             std::filesystem::create_directories(absolutePath);
         }
     } catch (const std::exception& e) {
@@ -74,32 +64,17 @@ std::string getLogDir() {
 }
 
 int main() {
-    // 显示当前工作目录
-    try {
-        std::cout << "当前工作目录: " << std::filesystem::current_path().string() << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "获取当前工作目录异常: " << e.what() << std::endl;
-    }
-    
     // 获取数据目录和日志目录
     std::string dataDir = getDataDir();
     std::string logDir = getLogDir();
-    
-    // 显示选择的目录
-    std::cout << "使用的数据目录: " << dataDir << std::endl;
-    std::cout << "使用的日志目录: " << logDir << std::endl;
     
     // 检查关键文件
     try {
         bool hasChineseJson = std::filesystem::exists(dataDir + "/Chinese.json");
         bool hasEnglishJson = std::filesystem::exists(dataDir + "/English.json");
         
-        std::cout << "Chinese.json 存在: " << (hasChineseJson ? "是" : "否") << std::endl;
-        std::cout << "English.json 存在: " << (hasEnglishJson ? "是" : "否") << std::endl;
-        
         // 如果文件不存在，创建简单的默认内容
         if (!hasChineseJson) {
-            std::cout << "尝试创建默认的Chinese.json文件..." << std::endl;
             std::ofstream chineseFile(dataDir + "/Chinese.json");
             chineseFile << R"({
   "main_menu_title": "主菜单",
@@ -116,7 +91,6 @@ int main() {
         }
         
         if (!hasEnglishJson) {
-            std::cout << "尝试创建默认的English.json文件..." << std::endl;
             std::ofstream englishFile(dataDir + "/English.json");
             englishFile << R"({
   "main_menu_title": "Main Menu",
@@ -136,13 +110,11 @@ int main() {
     }
     
     // 初始化系统日志
-    std::cout << "初始化日志系统..." << std::endl;
     Logger& logger = Logger::getInstance();
     try {
-        if (!logger.initialize(logDir, LogLevel::DEBUG)) {
+        if (!logger.initialize(logDir, LogLevel::INFO)) {
             std::cerr << "日志系统初始化失败！继续执行但日志功能可能不可用" << std::endl;
         } else {
-            std::cout << "日志系统初始化成功" << std::endl;
             logger.info("日志系统初始化成功");
             logger.info("数据目录: " + dataDir);
             logger.info("日志目录: " + logDir);
@@ -153,12 +125,10 @@ int main() {
     }
     
     // 获取CourseSystem单例
-    std::cout << "获取CourseSystem实例..." << std::endl;
     CourseSystem& system = CourseSystem::getInstance();
     
     // 初始化系统
     try {
-        std::cout << "开始初始化系统..." << std::endl;
         bool initSuccess = system.initialize(dataDir, logDir);
         if (!initSuccess) {
             std::cerr << "系统初始化失败" << std::endl;
@@ -171,7 +141,6 @@ int main() {
             return 1;
         }
         
-        std::cout << "初始化成功，开始运行系统..." << std::endl;
         // 运行系统主循环
         return system.run();
     } catch (const std::exception& e) {
