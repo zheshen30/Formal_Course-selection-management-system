@@ -43,23 +43,21 @@
   - nlohmann/json（已包含在源码中）(使用单头文件的json解析库，通过预编译头文件减少编译时间)
 
 
-## 安装OpenSSL（必须安装）
+## 安装OpenSSL开发包（必须安装）
 
 **Linux下安装OpenSSL的方法：**
 
 ```bash
-# Debian/Ubuntu
-sudo apt-get install libssl-dev
-
-# CentOS/RHEL
+# CentOS/RHEL/Rocky
 sudo yum install openssl-devel
 ```
 
-**macOS和Windows下的OpenSSL的安装方法请自行搜索**
+**macOS和Windows以及其它Linux发行版下的OpenSSL的安装方法请自行搜索**
+**注：openssl-devel是开发包，依赖openssl（运行时包），yum在安装过程中会自动解析并解决依赖关系**
 
 ## 构建与运行
 
-### 直接构建（以rocky Linux平台为例）
+### 直接构建（以Rocky Linux平台为例）
 
 1. 确保已正确安装OpenSSL库（需安装在系统标准位置或配置环境变量，否则找不到OpenSSL）
 
