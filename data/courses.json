@@ -1,14 +1,16 @@
 [
     {
-        "credit": 3.5,
-        "enrolledStudents": [],
-        "hours": 56,
-        "id": "CS201",
-        "maxCapacity": 30,
-        "name": "面向对象程序设计",
+        "credit": 3.0,
+        "enrolledStudents": [
+            "student001"
+        ],
+        "hours": 48,
+        "id": "CS101",
+        "maxCapacity": 50,
+        "name": "计算机导论",
         "semester": "2024-2025-1",
         "teacherId": "teacher001",
-        "type": "ELECTIVE"
+        "type": "REQUIRED"
     },
     {
         "credit": 4.0,
@@ -22,16 +24,14 @@
         "type": "REQUIRED"
     },
     {
-        "credit": 3.0,
-        "enrolledStudents": [
-            "student001"
-        ],
-        "hours": 48,
-        "id": "CS101",
-        "maxCapacity": 50,
-        "name": "计算机导论",
+        "credit": 3.5,
+        "enrolledStudents": [],
+        "hours": 56,
+        "id": "CS201",
+        "maxCapacity": 30,
+        "name": "面向对象程序设计",
         "semester": "2024-2025-1",
         "teacherId": "teacher001",
-        "type": "REQUIRED"
+        "type": "ELECTIVE"
     }
 ]
