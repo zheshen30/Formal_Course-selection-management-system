@@ -37,7 +37,7 @@ bool UserManager::addStudent(std::unique_ptr<Student> student) {
         Logger::getInstance().error("尝试添加空学生对象");
         return false;
     }
-    
+    //release返回unique_ptr的指针，并释放unique_ptr
     return addUser(std::unique_ptr<User>(student.release()));
 }
 
@@ -76,14 +76,15 @@ bool UserManager::addUser(std::unique_ptr<User> user) {
     }
     
     users_[userId] = std::move(user);
-    Logger::getInstance().info("成功添加用户: " + userId);
     
     // 立即保存数据，传入true表示已获取锁
     bool saveResult = saveData(true);
     if (!saveResult) {
-        Logger::getInstance().warning("添加用户后保存数据失败");
+        Logger::getInstance().error("添加用户后保存数据失败");
+        return false;
     }
-    
+
+     Logger::getInstance().info("成功添加用户: " + userId);
     return true;
 }
 
@@ -100,14 +101,15 @@ bool UserManager::removeUser(const std::string& userId) {
     }
     
     users_.erase(it);
-    Logger::getInstance().info("成功移除用户: " + userId);
-    
+        
     // 立即保存数据，传入true表示已获取锁
     bool saveResult = saveData(true);
     if (!saveResult) {
         Logger::getInstance().warning("移除用户后保存数据失败");
+        return false;
     }
-    
+
+    Logger::getInstance().info("成功移除用户: " + userId);
     return true;
 }
 
@@ -122,6 +124,7 @@ User* UserManager::getUser(const std::string& userId) {
         return nullptr;
     }
     
+    //get原始指针
     return it->second.get();
 }
 
@@ -131,7 +134,7 @@ Student* UserManager::getStudent(const std::string& studentId) {
         return nullptr;
     }
     
-    return static_cast<Student*>(user);
+    return dynamic_cast<Student*>(user);
 }
 
 Teacher* UserManager::getTeacher(const std::string& teacherId) {
@@ -140,7 +143,7 @@ Teacher* UserManager::getTeacher(const std::string& teacherId) {
         return nullptr;
     }
     
-    return static_cast<Teacher*>(user);
+    return dynamic_cast<Teacher*>(user);
 }
 
 Admin* UserManager::getAdmin(const std::string& adminId) {
@@ -149,7 +152,7 @@ Admin* UserManager::getAdmin(const std::string& adminId) {
         return nullptr;
     }
     
-    return static_cast<Admin*>(user);
+    return dynamic_cast<Admin*>(user);
 }
 
 User* UserManager::authenticate(const std::string& userId, const std::string& password) {
@@ -229,7 +232,7 @@ bool UserManager::loadData() {
             throw SystemException(ErrorType::LOCK_TIMEOUT, "获取用户管理器锁超时");
         }
         
-        DataManager& dataManager = DataManager::getInstance();
+        DataManager& dataManager = DataManager::getInstance(); // 获取单例
         std::string jsonStr = dataManager.loadJsonFromFile("users.json");
         
         if (jsonStr.empty()) {
@@ -294,30 +297,19 @@ bool UserManager::saveData(bool alreadyLocked) {
     try {
         json usersJson = json::array();
         std::string jsonStr;
-        std::vector<std::string> userIds;
-        
-        // 第一阶段：收集用户数据
         {
-            // 如果调用者没有获取锁，则获取锁
+            // 指向锁的智能指针，实现条件性锁定和作用域控制
             std::unique_ptr<LockGuard> lockPtr;
             if (!alreadyLocked) {
-                lockPtr = std::make_unique<LockGuard>(mutex_, 3000);
+                // 在堆上创建锁
+                lockPtr = std::make_unique<LockGuard>(mutex_, 5000);
                 if (!lockPtr->isLocked()) {
                     throw SystemException(ErrorType::LOCK_TIMEOUT, "获取用户管理器锁超时");
                 }
             }
-            
-            // 收集所有用户ID
+
             for (const auto& pair : users_) {
-                userIds.push_back(pair.first);
-            }
-            
-            // 对用户ID进行排序以确保保存顺序稳定
-            std::sort(userIds.begin(), userIds.end());
-            
-            // 按排序后的顺序收集用户数据
-            for (const auto& userId : userIds) {
-                const User* user = users_[userId].get();
+                const User* user = pair.second.get();
                 json userJson;
                 
                 // 通用属性
@@ -379,16 +371,12 @@ bool UserManager::saveData(bool alreadyLocked) {
     }
 }
 
-bool UserManager::saveData() {
-    return saveData(false); // 表示调用者没有获取锁
-}
-
 bool UserManager::updateUserInfo(const User& user) {
     LockGuard lock(mutex_, 5000); // 设置5秒超时
     if (!lock.isLocked()) {
         throw SystemException(ErrorType::LOCK_TIMEOUT, "获取用户管理器锁超时");
     }
-    
+
     auto it = users_.find(user.getId());
     if (it == users_.end()) {
         Logger::getInstance().warning("更新用户信息失败：用户ID " + user.getId() + " 不存在");
@@ -398,8 +386,8 @@ bool UserManager::updateUserInfo(const User& user) {
     // 根据用户类型，执行不同的更新操作
     switch (user.getType()) {
         case UserType::STUDENT: {
-            const Student& student = static_cast<const Student&>(user);
-            Student* existingStudent = static_cast<Student*>(it->second.get());
+            Student* existingStudent = dynamic_cast<Student*>(it->second.get());
+            const Student& student = dynamic_cast<const Student&>(user);
             
             existingStudent->setName(student.getName());
             existingStudent->setGender(student.getGender());
@@ -410,8 +398,8 @@ bool UserManager::updateUserInfo(const User& user) {
             break;
         }
         case UserType::TEACHER: {
-            const Teacher& teacher = static_cast<const Teacher&>(user);
-            Teacher* existingTeacher = static_cast<Teacher*>(it->second.get());
+            Teacher* existingTeacher = dynamic_cast<Teacher*>(it->second.get());
+            const Teacher& teacher = dynamic_cast<const Teacher&>(user);
             
             existingTeacher->setName(teacher.getName());
             existingTeacher->setDepartment(teacher.getDepartment());
@@ -420,8 +408,8 @@ bool UserManager::updateUserInfo(const User& user) {
             break;
         }
         case UserType::ADMIN: {
-            const Admin& admin = static_cast<const Admin&>(user);
-            Admin* existingAdmin = static_cast<Admin*>(it->second.get());
+            Admin* existingAdmin = dynamic_cast<Admin*>(it->second.get());
+            const Admin& admin = dynamic_cast<const Admin&>(user);
             
             existingAdmin->setName(admin.getName());
             break;
@@ -431,13 +419,12 @@ bool UserManager::updateUserInfo(const User& user) {
             return false;
     }
     
-    Logger::getInstance().info("成功更新用户信息: " + user.getId());
-    
     // 立即保存数据，传入true表示已获取锁
     bool saveResult = saveData(true);
     if (!saveResult) {
         Logger::getInstance().warning("更新用户信息后保存数据失败");
     }
+    Logger::getInstance().info("成功更新用户信息: " + user.getId());
     
     return true;
 }
@@ -472,14 +459,15 @@ bool UserManager::changeUserPassword(const std::string& userId, const std::strin
         }
         
         user->setPassword(newPassword);
-        Logger::getInstance().info("用户 " + userId + " 密码修改成功");
         
         // 立即保存数据，传入true表示已获取锁
         bool saveResult = saveData(true);
         if (!saveResult) {
             Logger::getInstance().warning("修改密码后保存数据失败");
+            return false;
         }
-        
+
+        Logger::getInstance().info("用户 " + userId + " 密码修改成功");
         return true;
     } catch (const std::exception& e) {
         Logger::getInstance().error("修改密码出现异常: " + std::string(e.what()));

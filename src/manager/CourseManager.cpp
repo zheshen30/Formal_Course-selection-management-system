@@ -28,7 +28,7 @@
 using json = nlohmann::json;
 
 CourseManager& CourseManager::getInstance() {
-    static CourseManager instance;
+    static CourseManager instance;  // Meyer's单例模式
     return instance;
 }
 
@@ -49,8 +49,16 @@ bool CourseManager::addCourse(std::unique_ptr<Course> course) {
         return false;
     }
     
+    //注：对智能指针使用移动语义，而不是对course对象使用移动语义
     courses_[courseId] = std::move(course);
-    Logger::getInstance().info("成功添加课程: " + courseId);
+    if(saveData(true)){ // 传入true表示已获取锁
+        Logger::getInstance().info("成功添加课程: " + courseId);
+        return true;
+    }
+    else{
+        Logger::getInstance().error("添加课程失败：保存数据失败");
+        return false;
+    }
     return true;
 }
 
@@ -67,8 +75,14 @@ bool CourseManager::removeCourse(const std::string& courseId) {
     }
     
     courses_.erase(it);
-    Logger::getInstance().info("成功移除课程: " + courseId);
-    return true;
+    if(saveData(true)){ // 传入true表示已获取锁
+        Logger::getInstance().info("成功移除课程: " + courseId);
+        return true;
+    }
+    else{
+        Logger::getInstance().error("移除课程失败：保存数据失败");
+        return false;
+    }
 }
 
 Course* CourseManager::getCourse(const std::string& courseId) {
@@ -107,8 +121,14 @@ bool CourseManager::updateCourseInfo(const Course& course) {
     existingCourse->setTeacherId(course.getTeacherId());
     existingCourse->setMaxCapacity(course.getMaxCapacity());
     
-    Logger::getInstance().info("成功更新课程信息: " + course.getId());
-    return true;
+    if(saveData(true)){ // 传入true表示已获取锁
+        Logger::getInstance().info("成功更新课程信息: " + course.getId());
+        return true;
+    }
+    else{
+        Logger::getInstance().error("更新课程信息失败：保存数据失败");
+        return false;
+    }
 }
 
 std::vector<std::string> CourseManager::getAllCourseIds() const {
@@ -127,6 +147,7 @@ std::vector<std::string> CourseManager::getAllCourseIds() const {
     return courseIds;
 }
 
+// 获取某教师的所有课程ID
 std::vector<std::string> CourseManager::getTeacherCourseIds(const std::string& teacherId) const {
     LockGuard lock(mutex_, 5000); // 设置5秒超时
     if (!lock.isLocked()) {
@@ -161,6 +182,7 @@ std::vector<std::string> CourseManager::getStudentEnrolledCourseIds(const std::s
     return courseIds;
 }
 
+//参数为函数的包装器
 std::vector<std::string> CourseManager::findCourses(const std::function<bool(const Course&)>& predicate) const {
     LockGuard lock(mutex_, 5000); // 设置5秒超时
     if (!lock.isLocked()) {
@@ -205,6 +227,7 @@ bool CourseManager::loadData() {
         json coursesJson = json::parse(jsonStr);
         courses_.clear();
         
+        //遍历json数组
         for (const auto& courseJson : coursesJson) {
             std::string id = courseJson["id"];
             std::string name = courseJson["name"];
@@ -249,14 +272,17 @@ bool CourseManager::loadData() {
     }
 }
 
-bool CourseManager::saveData() {
+bool CourseManager::saveData(bool alreadyLocked) {
     try {
-        LockGuard lock(mutex_, 5000); // 设置5秒超时
-        if (!lock.isLocked()) {
-            throw SystemException(ErrorType::LOCK_TIMEOUT, "获取课程管理器锁超时");
+        std::unique_ptr<LockGuard> lockPtr;
+        if (!alreadyLocked) {
+            lockPtr = std::make_unique<LockGuard>(mutex_, 5000); // 设置5秒超时
+            if (!lockPtr->isLocked()) {
+                throw SystemException(ErrorType::LOCK_TIMEOUT, "获取课程管理器锁超时");
+            }
         }
         
-        json coursesJson = json::array();
+        json coursesJson = json::array(); //创建空的json数组
         
         for (const auto& pair : courses_) {
             const Course* course = pair.second.get();
@@ -285,6 +311,7 @@ bool CourseManager::saveData() {
             
             // 保存已选学生
             json enrolledStudents = json::array();
+            // 遍历vector容器
             for (const auto& studentId : course->getEnrolledStudents()) {
                 enrolledStudents.push_back(studentId);
             }
@@ -293,17 +320,17 @@ bool CourseManager::saveData() {
             coursesJson.push_back(courseJson);
         }
         
-        std::string jsonStr = coursesJson.dump(4); // 格式化JSON，缩进4个空格
+        //将内存中的JSON对象序列化为文本形式的JSON字符串
+        //使用4个空格的缩进格式化输出
+        std::string jsonStr = coursesJson.dump(4); 
         
         DataManager& dataManager = DataManager::getInstance();
         bool result = dataManager.saveJsonToFile("courses.json", jsonStr);
         
         if (result) {
             Logger::getInstance().info("成功保存课程数据，共 " + std::to_string(courses_.size()) + " 个课程");
-        } else {
-            Logger::getInstance().error("保存课程数据失败");
-        }
-        
+        } 
+
         return result;
     } catch (const json::exception& e) {
         Logger::getInstance().error("生成课程数据JSON失败：" + std::string(e.what()));

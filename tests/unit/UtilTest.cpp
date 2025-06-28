@@ -132,13 +132,13 @@ TEST_F(UtilTest, I18nManagerTest) {
     std::string zhContent = R"({
         "test_key": "测试文本",
         "greeting": "你好，{0}！",
-        "info": "这是一个{0}的{1}"
+        "simple_text": "简单文本"
     })";
     
     std::string enContent = R"({
         "test_key": "Test Text",
         "greeting": "Hello, {0}!",
-        "info": "This is a {0} of {1}"
+        "simple_text": "Simple Text"
     })";
     
     std::ofstream zhOut(zhFile);
@@ -158,8 +158,11 @@ TEST_F(UtilTest, I18nManagerTest) {
     
     // 测试获取翻译
     EXPECT_EQ("测试文本", i18n.getText("test_key"));
-    EXPECT_EQ("你好，世界！", i18n.getFormattedText("greeting", "世界"));
-    EXPECT_EQ("这是一个测试的示例", i18n.getFormattedText("info", "测试", "示例"));
+    EXPECT_EQ("简单文本", i18n.getText("simple_text"));
+    
+    // 使用std::string进行单参数测试
+    std::string world_zh = "世界";
+    EXPECT_EQ("你好，世界！", i18n.getFormattedText("greeting", world_zh));
     
     // 测试切换语言
     EXPECT_TRUE(i18n.setLanguage(Language::ENGLISH));
@@ -167,8 +170,11 @@ TEST_F(UtilTest, I18nManagerTest) {
     
     // 测试获取翻译
     EXPECT_EQ("Test Text", i18n.getText("test_key"));
-    EXPECT_EQ("Hello, World!", i18n.getFormattedText("greeting", "World"));
-    EXPECT_EQ("This is a test of example", i18n.getFormattedText("info", "test", "example"));
+    EXPECT_EQ("Simple Text", i18n.getText("simple_text"));
+    
+    // 使用std::string进行单参数测试
+    std::string world_en = "World";
+    EXPECT_EQ("Hello, World!", i18n.getFormattedText("greeting", world_en));
     
     // 测试不存在的键
     EXPECT_EQ("unknown_key", i18n.getText("unknown_key"));
@@ -176,24 +182,6 @@ TEST_F(UtilTest, I18nManagerTest) {
 
 // 测试InputValidator类
 TEST_F(UtilTest, InputValidatorTest) {
-    // 测试ID验证
-    EXPECT_TRUE(InputValidator::validateId("user123"));
-    EXPECT_TRUE(InputValidator::validateId("USER_123"));
-    EXPECT_FALSE(InputValidator::validateId("user 123"));  // 包含空格
-    EXPECT_FALSE(InputValidator::validateId("user@123"));  // 包含特殊字符
-    EXPECT_FALSE(InputValidator::validateId(""));          // 空字符串
-    
-    // 测试名称验证
-    EXPECT_TRUE(InputValidator::validateName("张三"));
-    EXPECT_TRUE(InputValidator::validateName("John Doe"));
-    EXPECT_FALSE(InputValidator::validateName(""));        // 空字符串
-    
-    // 测试密码验证
-    EXPECT_TRUE(InputValidator::validatePassword("password123"));
-    EXPECT_TRUE(InputValidator::validatePassword("P@ssw0rd"));
-    EXPECT_FALSE(InputValidator::validatePassword("123"));  // 太短
-    EXPECT_FALSE(InputValidator::validatePassword(""));     // 空字符串
-    
     // 测试整数验证
     int value;
     EXPECT_TRUE(InputValidator::validateInteger("123", std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), value));
@@ -215,6 +203,23 @@ TEST_F(UtilTest, InputValidatorTest) {
     EXPECT_DOUBLE_EQ(dvalue, -123.45);
     EXPECT_FALSE(InputValidator::validateDouble("12a3.45", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), dvalue));
     EXPECT_FALSE(InputValidator::validateDouble("", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), dvalue));
+    
+    // 测试选项验证
+    EXPECT_TRUE(InputValidator::validateChoice("1", 1, 5, value));
+    EXPECT_EQ(value, 1);
+    EXPECT_TRUE(InputValidator::validateChoice("5", 1, 5, value));
+    EXPECT_EQ(value, 5);
+    EXPECT_FALSE(InputValidator::validateChoice("0", 1, 5, value));
+    EXPECT_FALSE(InputValidator::validateChoice("6", 1, 5, value));
+    EXPECT_FALSE(InputValidator::validateChoice("a", 1, 5, value));
+    EXPECT_FALSE(InputValidator::validateChoice("", 1, 5, value));
+    
+    // 测试空输入验证
+    EXPECT_TRUE(InputValidator::isEmptyInput(""));
+    EXPECT_TRUE(InputValidator::isEmptyInput("   "));
+    EXPECT_TRUE(InputValidator::isEmptyInput("\t\n"));
+    EXPECT_FALSE(InputValidator::isEmptyInput("abc"));
+    EXPECT_FALSE(InputValidator::isEmptyInput(" abc "));
 }
 
 int main(int argc, char **argv) {

@@ -22,35 +22,14 @@
 #include <algorithm>
 #include <iostream>
 
-bool InputValidator::validateStringLength(const std::string& input, size_t minLength, size_t maxLength) {
-    size_t length = input.length();
-    return length >= minLength && length <= maxLength;
-}
-
-bool InputValidator::validateStringChars(const std::string& input, const std::string& allowedChars) {
-    return input.find_first_not_of(allowedChars) == std::string::npos;
-}
-
 bool InputValidator::validateInteger(const std::string& input, int min, int max, int& result) {
     try {
-        // 去除空白字符
-        std::string trimmed = input;
-        trimmed.erase(0, trimmed.find_first_not_of(" \t\n\r\f\v"));
-        trimmed.erase(trimmed.find_last_not_of(" \t\n\r\f\v") + 1);
-        
-        // 检查是否为空
-        if (trimmed.empty()) {
-            return false;
-        }
-        
         // 检查是否只包含数字和正负号
-        if (!std::regex_match(trimmed, std::regex("[+-]?[0-9]+"))) {
+        if (!std::regex_match(input, std::regex("[+-]?[0-9]+"))) {
             return false;
         }
-        
         // 转换为整数
-        result = std::stoi(trimmed);
-        
+        result = std::stoi(input);
         // 检查范围
         return result >= min && result <= max;
     } catch (const std::exception&) {
@@ -60,23 +39,13 @@ bool InputValidator::validateInteger(const std::string& input, int min, int max,
 
 bool InputValidator::validateDouble(const std::string& input, double min, double max, double& result) {
     try {
-        // 去除空白字符
-        std::string trimmed = input;
-        trimmed.erase(0, trimmed.find_first_not_of(" \t\n\r\f\v"));
-        trimmed.erase(trimmed.find_last_not_of(" \t\n\r\f\v") + 1);
-        
-        // 检查是否为空
-        if (trimmed.empty()) {
-            return false;
-        }
-        
         // 检查是否为有效的浮点数格式
-        if (!std::regex_match(trimmed, std::regex("[+-]?([0-9]*[.])?[0-9]+"))) {
+        if (!std::regex_match(input, std::regex("[+-]?([0-9]*[.])?[0-9]+"))) {
             return false;
         }
         
         // 转换为浮点数
-        result = std::stod(trimmed);
+        result = std::stod(input);
         
         // 检查范围
         return result >= min && result <= max;
@@ -85,63 +54,22 @@ bool InputValidator::validateDouble(const std::string& input, double min, double
     }
 }
 
-bool InputValidator::validateId(const std::string& id) {
-    // ID应为字母、数字和下划线组合
-    std::regex pattern("^[a-zA-Z0-9_]{3,20}$");
-    return std::regex_match(id, pattern);
-}
-
-bool InputValidator::validateName(const std::string& name) {
-    // 姓名应为2-50位字符，不包含特殊字符
-    // 避免使用复杂的Unicode正则表达式
-    
-    // 检查长度
-    if (name.empty() || name.size() < 2 || name.size() > 50) {
-        return false;
-    }
-    
-    // 简单检查：允许字母、数字、空格和常见标点
-    for (char c : name) {
-        // 允许字母、数字、空格和一些常见标点（如 . , ' -）
-        if (!std::isalnum(c) && c != ' ' && c != '.' && c != ',' && c != '\'' && c != '-') {
-            // 简单处理：对于非ASCII字符，假设它们是有效的（如中文字符）
-            if (static_cast<unsigned char>(c) >= 128) {
-                continue;
-            }
-            return false;
-        }
-    }
-    
-    return true;
-}
-
-bool InputValidator::validatePassword(const std::string& password) {
-    // 密码应为8-20位字符，包含字母和数字
-    std::regex pattern("^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9!@#$%^&*]{8,20}$");
-    return std::regex_match(password, pattern);
-}
-
 bool InputValidator::validateChoice(const std::string& input, int min, int max, int& result) {
     try {
-        // 去除空白字符
-        std::string trimmed = input;
-        trimmed.erase(0, trimmed.find_first_not_of(" \t\n\r\f\v"));
-        trimmed.erase(trimmed.find_last_not_of(" \t\n\r\f\v") + 1);
-        
         // 检查是否为空
-        if (trimmed.empty()) {
+        if (input.empty()) {
             return false;
         }
         
         // 检查是否只包含数字
-        for (char c : trimmed) {
+        for (char c : input) {
             if (!std::isdigit(c)) {
                 return false;
             }
         }
         
         // 转换为整数
-        result = std::stoi(trimmed);
+        result = std::stoi(input);
         
         // 检查范围
         bool isValid = (result >= min && result <= max);
@@ -168,17 +96,3 @@ bool InputValidator::isEmptyInput(const std::string& input) {
     return trimmed.empty();
 }
 
-bool InputValidator::validateGender(const std::string& gender) {
-    // 性别应为"男"、"女"或"male"、"female"
-    std::string lower = gender;
-    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-    return lower == "男" || lower == "女" || lower == "male" || lower == "female";
-}
-
-bool InputValidator::validateContact(const std::string& contact) {
-    // 简单的电子邮件或电话格式验证
-    std::regex emailPattern("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    std::regex phonePattern("^[0-9\\+\\-\\s]{5,20}$");
-    
-    return std::regex_match(contact, emailPattern) || std::regex_match(contact, phonePattern);
-}

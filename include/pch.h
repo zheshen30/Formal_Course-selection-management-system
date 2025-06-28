@@ -36,19 +36,13 @@
 #include <filesystem>
 #include <iomanip>
 
-// 第三方库头文件
+// json库头文件
 #include "../nlohmann/json.hpp"
 
-// OpenSSL库头文件 - 根据CMake配置有条件地包含
-#ifndef NO_OPENSSL
-  #ifdef HAVE_OPENSSL
-    #include <openssl/sha.h>
-    #include <openssl/evp.h>
-  #endif
-#endif
+// OpenSSL库头文件
+#include <openssl/sha.h>
+#include <openssl/rand.h>
+#include <openssl/evp.h>
 
 // 项目常用的公共头文件
 #include "system/SystemException.h"
-
-// 注意：不要在预编译头文件中包含依赖于具体实现的头文件
-// 预编译头文件应当包含稳定的、频繁使用的头文件 

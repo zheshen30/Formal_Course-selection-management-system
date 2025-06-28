@@ -112,6 +112,7 @@ endmacro()
 add_executable(test_user unit/UserTest.cpp 
     ../src/model/User.cpp
     ../src/system/SystemException.cpp
+    ../src/util/Logger.cpp
 )
 add_test_pch(test_user)
 
@@ -149,6 +150,7 @@ endif()
 add_executable(test_course unit/CourseTest.cpp 
     ../src/model/Course.cpp
     ../src/system/SystemException.cpp
+    ../src/util/Logger.cpp
 )
 add_test_pch(test_course)
 
@@ -168,6 +170,7 @@ target_link_libraries(test_course PRIVATE
 add_executable(test_enrollment unit/EnrollmentTest.cpp 
     ../src/model/Enrollment.cpp
     ../src/system/SystemException.cpp
+    ../src/util/Logger.cpp
 )
 add_test_pch(test_enrollment)
 

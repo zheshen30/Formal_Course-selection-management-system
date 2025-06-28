@@ -26,26 +26,17 @@
 
 namespace fs = std::filesystem;
 
-// 获取当前日期时间的字符串表示（北京时间，UTC+8）
+
 std::string getCurrentTimeString() {
-    // 获取当前系统时间点
+    // 获取系统时间
     auto now = std::chrono::system_clock::now();
     
-    // 转换为time_t（秒级时间戳）
+    // 转换为本地时间
     auto now_time_t = std::chrono::system_clock::to_time_t(now);
-    
-    // 转换为UTC结构化时间
-    std::tm* gmt_tm = std::gmtime(&now_time_t);
-    if (!gmt_tm) {
+    std::tm* local_tm = std::localtime(&now_time_t);
+    if (!local_tm) {
         return "ERROR_TIME";
     }
-    
-    // 实施北京时间转换 (UTC+8)
-    // 增加8小时
-    gmt_tm->tm_hour += 8;
-    
-    // 处理时间进位
-    std::mktime(gmt_tm);
     
     // 获取毫秒部分
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -53,26 +44,26 @@ std::string getCurrentTimeString() {
     
     // 格式化时间字符串
     std::stringstream ss;
-    ss << std::put_time(gmt_tm, "%Y-%m-%d %H:%M:%S");
-    ss << '.' << std::setfill('0') << std::setw(3) << ms.count();
+    ss << std::put_time(local_tm, "%Y-%m-%d %H:%M:%S")
+       << '.' << std::setfill('0') << std::setw(3) << ms.count();
     
     return ss.str();
 }
 
 Logger& Logger::getInstance() {
-    static Logger instance;
+    static Logger instance; // Meyer's单例模式
     return instance;
 }
 
-Logger::Logger() : initialized_(false), logLevel_(LogLevel::INFO) {
-    // 默认构造，什么都不做
-}
+Logger::Logger() : initialized_(false), logLevel_(LogLevel::INFO) {}
 
 Logger::~Logger() {
     // 确保所有文件都关闭
     if (infoFile_.is_open()) infoFile_.close();
     if (warnFile_.is_open()) warnFile_.close();
     if (errorFile_.is_open()) errorFile_.close();
+    if (criticalFile_.is_open()) criticalFile_.close();
+    if (debugFile_.is_open()) debugFile_.close();   
 }
 
 bool Logger::initialize(const std::string& logDir, LogLevel logLevel) {
@@ -91,17 +82,21 @@ bool Logger::initialize(const std::string& logDir, LogLevel logLevel) {
         }
         
         // 构建日志文件路径
-        std::string infoPath = logDir + "/simple_info.log";
-        std::string warnPath = logDir + "/simple_warn.log";
-        std::string errorPath = logDir + "/simple_error.log";
+        std::string infoPath = logDir + "/Info.log";
+        std::string warnPath = logDir + "/Warn.log";
+        std::string errorPath = logDir + "/Error.log";
+        std::string criticalPath = logDir + "/Critical.log";
+        std::string debugPath = logDir + "/Debug.log";
         
         // 打开日志文件，使用追加模式
         infoFile_.open(infoPath, std::ios::app);
         warnFile_.open(warnPath, std::ios::app);
         errorFile_.open(errorPath, std::ios::app);
+        criticalFile_.open(criticalPath, std::ios::app);
+        debugFile_.open(debugPath, std::ios::app);  
         
         // 检查文件是否成功打开
-        if (!infoFile_.is_open() || !warnFile_.is_open() || !errorFile_.is_open()) {
+        if (!infoFile_.is_open() || !warnFile_.is_open() || !errorFile_.is_open() || !criticalFile_.is_open() || !debugFile_.is_open()) {
             return false;
         }
         
@@ -114,9 +109,9 @@ bool Logger::initialize(const std::string& logDir, LogLevel logLevel) {
         
         return true;
     } catch (const std::exception&) {
-        return false;
+        return false; //捕获C++标准异常
     } catch (...) {
-        return false;
+        return false; //捕获其他异常
     }
 }
 
@@ -125,30 +120,32 @@ void Logger::debug(const std::string& message) {
     
     std::string logMsg = "[" + getCurrentTimeString() + "] [DEBUG] " + message;
     
-    // 只写入到文件，不输出到屏幕
     try {
         if (initialized_ && infoFile_.is_open()) {
             std::lock_guard<std::mutex> lock(mutex_);
-            infoFile_ << logMsg << std::endl;
+            debugFile_ << logMsg << std::endl;
         }
     } catch (...) {
-        // 忽略写入错误
+        // 忽略写入错误，确保不影响程序运行
     }
 }
 
 void Logger::info(const std::string& message) {
-    if (logLevel_ > LogLevel::INFO) return;
+    if (logLevel_ > LogLevel::INFO) return;  // 如果日志级别大于INFO，则不记录
     
     std::string logMsg = "[" + getCurrentTimeString() + "] [INFO] " + message;
     
-    // 只写入到日志文件，不输出到屏幕
     try {
         if (initialized_ && infoFile_.is_open()) {
             std::lock_guard<std::mutex> lock(mutex_);
             infoFile_ << logMsg << std::endl;
+            // 同时写入下级日志文件
+            if (debugFile_.is_open()) {
+                debugFile_ << logMsg << std::endl;
+            }
         }
     } catch (...) {
-        // 忽略写入错误
+        // 忽略写入错误，确保不影响程序运行
     }
 }
 
@@ -157,18 +154,20 @@ void Logger::warning(const std::string& message) {
     
     std::string logMsg = "[" + getCurrentTimeString() + "] [WARNING] " + message;
     
-    // 只写入到日志文件，不输出到屏幕
     try {
         if (initialized_ && warnFile_.is_open()) {
             std::lock_guard<std::mutex> lock(mutex_);
             warnFile_ << logMsg << std::endl;
-            // 同时写入信息日志文件
+            // 同时写入下级日志文件
             if (infoFile_.is_open()) {
                 infoFile_ << logMsg << std::endl;
             }
+            if (debugFile_.is_open()) {
+                debugFile_ << logMsg << std::endl;
+            }
         }
     } catch (...) {
-        // 忽略写入错误
+        // 忽略写入错误，确保不影响程序运行
     }
 }
 
@@ -177,21 +176,23 @@ void Logger::error(const std::string& message) {
     
     std::string logMsg = "[" + getCurrentTimeString() + "] [ERROR] " + message;
     
-    // 只写入到日志文件，不输出到屏幕
     try {
         if (initialized_ && errorFile_.is_open()) {
             std::lock_guard<std::mutex> lock(mutex_);
             errorFile_ << logMsg << std::endl;
-            // 同时写入信息和警告日志文件
+            // 同时写入下级日志文件
             if (warnFile_.is_open()) {
                 warnFile_ << logMsg << std::endl;
             }
             if (infoFile_.is_open()) {
                 infoFile_ << logMsg << std::endl;
             }
+            if (debugFile_.is_open()) {
+                debugFile_ << logMsg << std::endl;
+            }
         }
     } catch (...) {
-        // 忽略写入错误
+        // 忽略写入错误，确保不影响程序运行
     }
 }
 
@@ -200,21 +201,26 @@ void Logger::critical(const std::string& message) {
     
     std::string logMsg = "[" + getCurrentTimeString() + "] [CRITICAL] " + message;
     
-    // 只写入到日志文件，不输出到屏幕
     try {
         if (initialized_ && errorFile_.is_open()) {
             std::lock_guard<std::mutex> lock(mutex_);
-            errorFile_ << logMsg << std::endl;
-            // 同时写入信息和警告日志文件
+            criticalFile_ << logMsg << std::endl;
+            // 同时写入下级日志文件
             if (warnFile_.is_open()) {
                 warnFile_ << logMsg << std::endl;
             }
             if (infoFile_.is_open()) {
                 infoFile_ << logMsg << std::endl;
             }
+            if (debugFile_.is_open()) {
+                debugFile_ << logMsg << std::endl;
+            }
+            if (errorFile_.is_open()) {
+                errorFile_ << logMsg << std::endl;
+            }
         }
     } catch (...) {
-        // 忽略写入错误
+        // 忽略写入错误，确保不影响程序运行
     }
 }
 

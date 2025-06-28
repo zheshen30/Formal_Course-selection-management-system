@@ -71,9 +71,9 @@ bool Course::addStudent(const std::string& studentId) {
     if (enrolledStudents_.size() >= static_cast<size_t>(maxCapacity_)) {
         return false; // 课程已满
     }
-    
+    //返回一个pair，first是插入的元素，second是否插入成功
     auto result = enrolledStudents_.insert(studentId);
-    return result.second; // 如果插入成功，返回true
+    return result.second; 
 }
 
 bool Course::removeStudent(const std::string& studentId) {

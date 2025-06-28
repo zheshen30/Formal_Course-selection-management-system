@@ -27,7 +27,7 @@
 namespace fs = std::filesystem;
 
 DataManager& DataManager::getInstance() {
-    static DataManager instance;
+    static DataManager instance; // Meyer's单例模式
     return instance;
 }
 
@@ -41,21 +41,17 @@ std::string DataManager::loadJsonFromFile(const std::string& filename) {
     std::string filePath = getDataFilePath(filename);
     Logger::getInstance().debug("尝试从文件加载JSON: " + filePath);
 
-    // 先检查文件是否存在（不需要加锁）
     if (!fileExists(filePath)) {
         Logger::getInstance().warning("文件不存在: " + filePath);
         return "";
     }
     
     try {
-        // 只在读取文件时短暂加锁
-        std::string jsonContent;
+        std::string jsonContent; // 存储文件内容
         {
-            // 使用更短的作用域加锁
-            LockGuard lock(mutex_, 1000); // 减少超时时间
+            LockGuard lock(mutex_, 1000); 
             if (!lock.isLocked()) {
                 Logger::getInstance().warning("获取数据管理器锁超时，尝试无锁读取");
-                // 如果锁失败，尝试直接读取
             }
             
             std::ifstream file(filePath);
@@ -66,7 +62,7 @@ std::string DataManager::loadJsonFromFile(const std::string& filename) {
             
             jsonContent = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
             file.close();
-        } // 锁在这里释放
+        } 
         
         Logger::getInstance().debug("文件读取成功，内容大小: " + std::to_string(jsonContent.size()) + " 字节");
         
@@ -81,10 +77,9 @@ std::string DataManager::loadJsonFromFile(const std::string& filename) {
 }
 
 bool DataManager::saveJsonToFile(const std::string& filename, const std::string& jsonData) {
-    std::string filePathStr;
     
     // 使用getDataFilePath获取正确的文件路径
-    filePathStr = getDataFilePath(filename);
+    std::string filePathStr = getDataFilePath(filename);
     std::string tempFilePath = filePathStr + ".tmp";
     
     // 确保目录存在
@@ -109,12 +104,6 @@ bool DataManager::saveJsonToFile(const std::string& filename, const std::string&
         file << jsonData;
         file.close();
         
-        // 检查是否成功写入
-        if (!fileExists(tempFilePath)) {
-            Logger::getInstance().error("写入临时文件失败: " + tempFilePath);
-            return false;
-        }
-        
         // 重命名临时文件为目标文件
         try {
             if (fs::exists(filePathStr)) {
@@ -135,7 +124,7 @@ bool DataManager::saveJsonToFile(const std::string& filename, const std::string&
         throw SystemException(ErrorType::FILE_ACCESS_DENIED, std::string("保存文件失败: ") + e.what());
     }
     
-    return false; // 默认返回失败（通常不会执行到这里）
+    return false; //（通常不会执行到这里）
 }
 
 bool DataManager::fileExists(const std::string& filename) const {
@@ -160,11 +149,10 @@ bool DataManager::createDirectory(const std::string& dirname) const {
 }
 
 std::string DataManager::getDataFilePath(const std::string& filename) const {
-    // 检查filename是否已经包含数据目录路径
+    // 检查filename 第一次出现 dataDirectory_ 的位置是否为0
     if (filename.find(dataDirectory_) == 0) {
-        // 如果filename已经包含了数据目录路径，直接返回
         return filename;
-    }
+    }   
     
     // 否则拼接路径
     fs::path filePath = fs::path(dataDirectory_) / filename;
@@ -175,9 +163,8 @@ void DataManager::setDataDirectory(const std::string& dataDir) {
     LockGuard lock(mutex_);
     dataDirectory_ = dataDir;
     
-    // 确保目录存在
     if (!createDirectory(dataDirectory_)) {
-        throw SystemException(ErrorType::FILE_ACCESS_DENIED, "无法创建或访问数据目录: " + dataDirectory_);
+        throw SystemException(ErrorType::FILE_ACCESS_DENIED, "无法创建数据目录: " + dataDirectory_);
     }
     
     Logger::getInstance().info("设置数据目录: " + dataDirectory_);

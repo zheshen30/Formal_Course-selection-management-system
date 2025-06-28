@@ -27,10 +27,9 @@
 #include <limits>
 #include <thread>
 #include <chrono>
-#include <unistd.h>
 
 CourseSystem& CourseSystem::getInstance() {
-    static CourseSystem instance;
+    static CourseSystem instance; // Meyer's单例模式
     return instance;
 }
 
@@ -40,24 +39,16 @@ CourseSystem::CourseSystem()
       currentUser_(nullptr) {
 }
 
-bool CourseSystem::initialize(const std::string& dataDir, const std::string& logDir) {
+bool CourseSystem::initialize(const std::string& dataDir) {
     try {
-        // 初始化国际化管理器（这是初始化最关键的部分，因为UI文本都依赖于此）
+        
+        // 初始化国际化管理器
         I18nManager& i18n = I18nManager::getInstance();
         if (!i18n.initialize(dataDir)) {
-            Logger::getInstance().error("初始化国际化系统失败");
+            Logger::getInstance().critical("初始化国际化系统失败");
             return false;
         }
-        
-        // 先尝试设置语言，确保可以显示UI
-        selectLanguage(Language::CHINESE);
-        
-        // 在这里初始化日志系统，避免与CourseSystem产生循环依赖
-        Logger& logger = Logger::getInstance();
-        bool logResult = logger.initialize(logDir, LogLevel::DEBUG);
-        
-
-        
+  
         // 初始化数据管理器
         DataManager& dataManager = DataManager::getInstance();
         dataManager.setDataDirectory(dataDir);
@@ -68,39 +59,45 @@ bool CourseSystem::initialize(const std::string& dataDir, const std::string& log
             bool userDataLoaded = userManager.loadData();
             
             if (!userDataLoaded) {
-                logger.warning("用户数据加载失败，系统可能无法正常工作");
+                Logger::getInstance().warning("用户数据加载失败");
             }
             
             // 加载课程数据
             CourseManager& courseManager = CourseManager::getInstance();
-            courseManager.loadData();
+            bool courseDateLoaded = courseManager.loadData();
+            
+            if (!courseDateLoaded) {
+                Logger::getInstance().warning("课程数据加载失败");
+            }
             
             // 加载选课数据
             EnrollmentManager& enrollmentManager = EnrollmentManager::getInstance();
-            enrollmentManager.loadData();
+            bool enrollmentDataLoaded = enrollmentManager.loadData();
+            
+            if (!enrollmentDataLoaded) {
+                Logger::getInstance().warning("选课数据加载失败");
+            }
             
             initialized_ = true;
             
-            if (logResult) {
-                logger.info("系统初始化成功");
-            }
+            Logger::getInstance().info("系统初始化成功");
             return true;
         } catch (const std::exception& e) {
-            logger.error("初始化CourseSystem时发生异常: " + std::string(e.what()));
+            Logger::getInstance().error("初始化CourseSystem时发生异常: " + std::string(e.what()));
             return false;
         }
     } catch (const std::exception& e) {
-        Logger::getInstance().error("初始化CourseSystem时发生严重异常: " + std::string(e.what()));
+        Logger::getInstance().critical("初始化CourseSystem时发生严重异常: " + std::string(e.what()));
         return false;
     } catch (...) {
-        Logger::getInstance().error("初始化CourseSystem时发生未知异常");
+        Logger::getInstance().critical("初始化CourseSystem时发生未知异常");
         return false;
     }
 }
 
 int CourseSystem::run() {
     if (!initialized_) {
-        Logger::getInstance().error("系统未初始化");
+        Logger::getInstance().critical("系统未初始化");
         return -1;
     }
     
@@ -110,64 +107,57 @@ int CourseSystem::run() {
     showWelcome();
     
     try {
-        // 检查输入是否来自终端
-        bool isTerminal = isatty(fileno(stdin));
-        
         // 选择语言
-        std::cout << "请选择语言 / Please select language:" << std::endl;
+        std::cout << "================================================" << std::endl;
+        std::cout << "         请选择语言 / Please select language     " << std::endl;
+        std::cout << "================================================" << std::endl;
         std::cout << "1. 中文 / Chinese" << std::endl;
         std::cout << "2. English / 英文" << std::endl;
-        
+        std::cout << "3. " << "退出 / Exit" << std::endl;
+
         int choice = 0;
         std::string input;
         int attempts = 0;
-        const int MAX_ATTEMPTS = 5; // 最大尝试次数
+        const int MAX_ATTEMPTS = 3; // 最大尝试次数
         
-        // 如果输入不是来自终端，直接使用默认选择
-        if (!isTerminal) {
-            choice = 1;
-        } else {
-            do {
-                std::cout << "> ";
-                std::getline(std::cin, input);
-                
-                // 去除输入两端的空白字符
-                input.erase(0, input.find_first_not_of(" \t\r\n"));
-                input.erase(input.find_last_not_of(" \t\r\n") + 1);
-                
-                attempts++;
-                
-                if (input.empty()) {
-                    std::cout << "输入为空，请输入数字 / Empty input, please enter a number" << std::endl;
-                    continue;
-                }
-                
-                // 直接检查输入是否为"1"或"2"或"3"
-                if (input == "1") {
-                    choice = 1;
-                    break;
-                } else if (input == "2") {
-                    choice = 2;
-                    break;
-                } else if (input == "3") {
-                    choice = 3;
-                    break;
-                } else {
-                    std::cout << "输入无效，请输入数字 / Invalid input, please enter a number" << std::endl;
-                    
-                    if (attempts >= MAX_ATTEMPTS) {
-                        std::cout << "多次输入无效，默认选择退出 / Multiple invalid inputs, defaulting to exit" << std::endl;
-                        choice = 3; // 默认选择退出
-                        break;
-                    }
-                }
-            } while (true);
-        }
+        do {
+            std::cout << "> ";
+            std::getline(std::cin, input);
+            attempts++;
+            
+            if (input.empty()) {
+                std::cout << "输入为空，请输入数字 1-3 / Empty input, please enter a number 1-3" << std::endl;
+                continue;
+            }
+            
+            if (input == "1" || input == "2" || input == "3") {
+                choice = std::stoi(input);
+                break;
+            } else {
+                std::cout << "输入无效，请输入数字 1-3 / Invalid input, please enter a number 1-3" << std::endl;
+            }    
+            if (attempts >= MAX_ATTEMPTS) {
+                std::cout << "多次输入无效，默认选择退出 / Multiple invalid inputs, defaulting to exit" << std::endl;
+                choice = 3; // 默认选择退出
+                break;
+            }
+        } while (true);
         
+        bool result = false;
         // 设置语言
-        Language language = (choice == 1) ? Language::CHINESE : Language::ENGLISH;
-        if (!selectLanguage(language)) {
-            Logger::getInstance().warning("语言设置失败，使用默认语言");
+        switch (choice) {
+            case 1: // Language::CHINESE
+                result = I18nManager::getInstance().setLanguage(Language::CHINESE);
+                break;
+            case 2: // Language::ENGLISH
+                result = I18nManager::getInstance().setLanguage(Language::ENGLISH);
+                break;
+            case 3:
+                return -1;
+        }
+        if (!result) {
+            Logger::getInstance().critical("语言设置失败");
+            return -1;
         }
         
         // 主循环
@@ -211,7 +201,6 @@ int CourseSystem::run() {
                 std::this_thread::sleep_for(std::chrono::seconds(2));
             }
         }
-        
         return 0;
     }
     catch (const std::exception& e) {
@@ -228,7 +217,7 @@ void CourseSystem::shutdown() {
     if (running_) {
         // 保存所有数据
         try {
-            UserManager::getInstance().saveData();
+            UserManager::getInstance().saveData(false);
             CourseManager::getInstance().saveData();
             EnrollmentManager::getInstance().saveData();
             
@@ -247,8 +236,7 @@ bool CourseSystem::login(const std::string& userId, const std::string& password)
         logout(); // 先注销当前用户
     }
     
-    UserManager& userManager = UserManager::getInstance();
-    User* user = userManager.authenticate(userId, password);
+    User* user = UserManager::getInstance().authenticate(userId, password);
     
     if (user) {
         currentUser_ = user;
@@ -267,66 +255,6 @@ void CourseSystem::logout() {
     }
 }
 
-User* CourseSystem::getCurrentUser() const {
-    return currentUser_;
-}
-
-bool CourseSystem::checkPermission(UserType requiredUserType) const {
-    if (!currentUser_) {
-        return false;
-    }
-    
-    // 管理员有所有权限
-    if (currentUser_->getType() == UserType::ADMIN) {
-        return true;
-    }
-    
-    // 其他用户只有匹配的权限
-    return currentUser_->getType() == requiredUserType;
-}
-
-bool CourseSystem::selectLanguage(Language language) {
-    try {
-        bool result = I18nManager::getInstance().setLanguage(language);
-        
-        if (result) {
-            Logger::getInstance().info("语言设置成功: " + I18nManager::languageToString(language));
-            
-            // 验证一些关键键是否可获取
-            std::vector<std::string> testKeys = {"main_menu_title", "login", "exit"};
-            bool allKeysFound = true;
-            
-            for (const auto& key : testKeys) {
-                std::string text = getText(key);
-                if (text == key) {  // 如果getText返回键本身，说明没找到对应的文本
-                    allKeysFound = false;
-                }
-            }
-            
-            if (!allKeysFound) {
-                Logger::getInstance().warning("部分关键文本键无法获取，菜单可能无法正常显示");
-            }
-            
-            return true;
-        } else {
-            Logger::getInstance().error("语言设置失败: " + I18nManager::languageToString(language));
-            
-            // 尝试回退到另一种语言
-            Language fallbackLanguage = (language == Language::CHINESE) ? Language::ENGLISH : Language::CHINESE;
-            Logger::getInstance().info("尝试回退到: " + I18nManager::languageToString(fallbackLanguage));
-            
-            return I18nManager::getInstance().setLanguage(fallbackLanguage);
-        }
-    } catch (const std::exception& e) {
-        Logger::getInstance().error("设置语言时发生异常: " + std::string(e.what()));
-        return false;
-    }
-}
-
-Language CourseSystem::getCurrentLanguage() const {
-    return I18nManager::getInstance().getCurrentLanguage();
-}
-
 std::string CourseSystem::getText(const std::string& key) const {
     return I18nManager::getInstance().getText(key);
 }
@@ -336,30 +264,8 @@ std::string CourseSystem::getFormattedText(const std::string& key, Args... args)
     return I18nManager::getInstance().getFormattedText(key, args...);
 }
 
-void CourseSystem::log(LogLevel level, const std::string& message) const {
-    Logger& logger = Logger::getInstance();
-    
-    switch (level) {
-        case LogLevel::DEBUG:
-            logger.debug(message);
-            break;
-        case LogLevel::INFO:
-            logger.info(message);
-            break;
-        case LogLevel::WARNING:
-            logger.warning(message);
-            break;
-        case LogLevel::ERROR:
-            logger.error(message);
-            break;
-        case LogLevel::CRITICAL:
-            logger.critical(message);
-            break;
-        default:
-            logger.info(message);
-            break;
-    }
-}
+// 显式实例化常用的模板函
+template std::string CourseSystem::getFormattedText(const std::string& key, int) const;
 
 void CourseSystem::showWelcome() const {
     std::cout << "================================================" << std::endl;
@@ -371,146 +277,74 @@ void CourseSystem::showWelcome() const {
 
 void CourseSystem::showMainMenu() {
     try {
-        // 检查输入是否来自终端
-        bool isTerminal = isatty(fileno(stdin));
-        
         // 确保输入流处于良好状态
         if (std::cin.fail() || !std::cin.good()) {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
         
-        // 显示一个固定的标题，避免依赖I18n
         std::cout << "================================================" << std::endl;
-        std::cout << "                  主菜单 / Main Menu             " << std::endl;
+        std::cout << "            " << getText("main_menu_title") << "            " << std::endl;
         std::cout << "================================================" << std::endl;
-        
-        // 尝试获取翻译文本，但提供后备选项
-        std::string menuTitle;
-        try {
-            menuTitle = getText("main_menu_title");
-        } catch (...) {
-            menuTitle = "主菜单 / Main Menu";
-        }
-        
-        // 获取登录和退出选项文本，提供后备选项
-        std::string loginText, switchLanguageText, exitText;
-        try {
-            loginText = getText("login");
-        } catch (...) {
-            loginText = "登录 / Login";
-        }
-        
-        try {
-            switchLanguageText = getText("switch_language");
-        } catch (...) {
-            switchLanguageText = "切换语言 / Switch Language";
-        }
-        
-        try {
-            exitText = getText("exit");
-        } catch (...) {
-            exitText = "退出 / Exit";
-        }
-        
+    
+                                            
         // 显示菜单选项
-        std::cout << "1. " << loginText << std::endl;
-        std::cout << "2. " << switchLanguageText << std::endl;
-        std::cout << "3. " << exitText << std::endl;
+        std::cout << "1. " << getText("login") << std::endl;
+        std::cout << "2. " << getText("switch_language") << std::endl;
+        std::cout << "3. " << getText("exit") << std::endl;
     
         // 获取用户输入
         int choice = 0;
         std::string input;
         int attempts = 0;
-        const int MAX_ATTEMPTS = 5; // 最大尝试次数
+        const int MAX_ATTEMPTS = 3; // 最大尝试次数
         
-        // 如果输入不是来自终端，直接使用默认选择
-        if (!isTerminal) {
-            choice = 3; // 默认退出
-        } else {
-            do {
-                std::cout << "> ";
-                std::getline(std::cin, input);
-                
-                // 去除输入两端的空白字符
-                input.erase(0, input.find_first_not_of(" \t\r\n"));
-                input.erase(input.find_last_not_of(" \t\r\n") + 1);
-                
-                attempts++;
-                
-                if (input.empty()) {
-                    std::cout << "输入为空，请输入数字 / Empty input, please enter a number" << std::endl;
-                    continue;
-                }
-                
-                // 直接检查输入是否为"1"或"2"或"3"
-                if (input == "1") {
-                    choice = 1;
-                    break;
-                } else if (input == "2") {
-                    choice = 2;
-                    break;
-                } else if (input == "3") {
-                    choice = 3;
-                    break;
-                } else {
-                    std::cout << "输入无效，请输入数字 / Invalid input, please enter a number" << std::endl;
-                    
-                    if (attempts >= MAX_ATTEMPTS) {
-                        std::cout << "多次输入无效，默认选择退出 / Multiple invalid inputs, defaulting to exit" << std::endl;
-                        choice = 3; // 默认选择退出
-                        break;
-                    }
-                }
-            } while (true);
-        }
+        do {
+            std::cout << "> ";
+            std::getline(std::cin, input);
+            
+            attempts++;
+            
+            if (input.empty()) {
+                std::cout << getText("input_cannot_be_empty") << std::endl;
+                continue;
+            }
+            
+           if (input == "1" || input == "2" || input == "3") {
+                choice = std::stoi(input);
+                break;
+            } else {
+                std::cout << getText("invalid_input") << std::endl;
+            }    
+            if (attempts >= MAX_ATTEMPTS) {
+                std::cout << getText("too_many_attempts") << std::endl;
+                choice = 3; // 默认选择退出
+                break;
+            }
+        } while (true);
         
         if (choice == 1) {
             // 登录
             std::string userId, password;
             
-            // 获取提示文本，提供后备选项
-            std::string userPrompt, passPrompt;
-            try {
-                userPrompt = getText("enter_user_id");
-            } catch (...) {
-                userPrompt = "请输入用户ID / Please enter user ID";
-            }
-            
-            try {
-                passPrompt = getText("enter_password");
-            } catch (...) {
-                passPrompt = "请输入密码 / Please enter password";
-            }
-            
-            std::cout << userPrompt << ": ";
+            std::cout << getText("enter_user_id") << ": ";
             std::getline(std::cin, userId);
             
-            std::cout << passPrompt << ": ";
+            std::cout << getText("enter_password") << ": ";
             std::getline(std::cin, password);
             
             try {
                 if (login(userId, password)) {
-                    std::string successMsg;
-                    try {
-                        successMsg = getText("login_success");
-                    } catch (...) {
-                        successMsg = "登录成功 / Login successful";
-                    }
-                    std::cout << successMsg << std::endl;
+                    std::cout << getText("login_success") << std::endl;
                 } else {
-                    std::string failMsg;
-                    try {
-                        failMsg = getText("login_failed");
-                    } catch (...) {
-                        failMsg = "登录失败，用户ID或密码错误 / Login failed, incorrect user ID or password";
-                    }
-                    std::cout << failMsg << std::endl;
-                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                    std::cout << getText("login_failed") << std::endl;
+                    // 安全性考虑，防止暴力破解
+                    std::this_thread::sleep_for(std::chrono::seconds(1)); 
                 }
             } catch (const std::exception& e) {
-                std::cerr << "登录过程中发生异常: " << e.what() << std::endl;
-                std::cout << "登录失败，系统错误 / Login failed, system error" << std::endl;
+                Logger::getInstance().error(std::string("登陆时遇到系统错误") + ": " + e.what());
+                std::cout << getText("login_system_error") << std::endl;
+                // 安全性考虑，防止暴力破解
                 std::this_thread::sleep_for(std::chrono::seconds(1));
             }
         } else if (choice == 2) {
@@ -518,39 +352,31 @@ void CourseSystem::showMainMenu() {
             showLanguageMenu();
         } else {
             // 退出
-            std::cout << "退出系统... / Exiting system..." << std::endl;
+            std::cout << getText("exiting_system") << std::endl;
             shutdown();
         }
     } catch (const std::exception& e) {
-        std::cerr << "在主菜单中发生异常: " << e.what() << std::endl;
-        std::cout << "系统错误，请重试 / System error, please try again" << std::endl;
+        Logger::getInstance().error(std::string("主菜单中发生异常") + ": " + e.what());
+        std::cout << getText("system_error_retry") << std::endl;
     } catch (...) {
-        std::cerr << "在主菜单中发生未知异常" << std::endl;
-        std::cout << "系统发生未知错误 / Unknown system error occurred" << std::endl;
+        Logger::getInstance().error("主菜单中发生未知异常");
+        std::cout << getText("unknown_system_error") << std::endl;
     }
 }
 
 void CourseSystem::showLanguageMenu() {
     std::cout << "================================================" << std::endl;
-    std::cout << "            语言选择 / Language Selection        " << std::endl;
+    std::cout << "            " << getText("language_menu_title") << "            " << std::endl;
     std::cout << "================================================" << std::endl;
     
-    // 尝试获取翻译文本，但提供后备选项
-    std::string menuTitle;
-    try {
-        menuTitle = getText("language_menu_title");
-        std::cout << menuTitle << std::endl;
-    } catch (...) {
-        std::cout << "语言选择 / Language Selection" << std::endl;
-    }
-    
-    // 显示当前语言
-    std::cout << "当前语言 / Current language: " << I18nManager::languageToString(getCurrentLanguage()) << std::endl;
+    // 显示当前语言，languageToString 是 I18nManager 的静态成员函数
+    std::cout << getText("current_language") << ": " << 
+    I18nManager::languageToString(I18nManager::getInstance().getCurrentLanguage()) << std::endl;
     
     // 显示可用的语言选项
     std::cout << "1. 中文 (Chinese)" << std::endl;
-    std::cout << "2. English" << std::endl;
-    std::cout << "3. " << getText("return_to_parent_menu") << " / Return to Main Menu" << std::endl;
+    std::cout << "2. English (英语)" << std::endl;
+    std::cout << "3. " << "回到主菜单 (return_to_main_menu)" << std::endl;
     
     // 获取用户输入
     int choice = 0;
@@ -565,59 +391,56 @@ void CourseSystem::showLanguageMenu() {
         attempts++;
         
         if (input.empty()) {
-            std::cout << "输入为空，请重新输入 / Empty input, please try again" << std::endl;
+            std::cout << getText("input_cannot_be_empty") << std::endl;
             continue;
         }
         
-        if (input == "1") {
-            choice = 1;
-            break;
-        } else if (input == "2") {
-            choice = 2;
-            break;
-        } else if (input == "3") {
-            choice = 3;
+        if (input == "1" || input == "2" || input == "3") {
+            choice = std::stoi(input);
             break;
         } else {
-            std::cout << getText("invalid_input") << " / Invalid input, please try again" << std::endl;
-            
-            if (attempts >= MAX_ATTEMPTS) {
-                std::cout << "多次输入无效，返回主菜单 / Multiple invalid inputs, returning to main menu" << std::endl;
-                choice = 3;
-                break;
-            }
+            std::cout << getText("invalid_input") << std::endl;
         }
+        if (attempts >= MAX_ATTEMPTS) {
+            std::cout << getText("too_many_attempts") << std::endl;
+            choice = 3;
+            break;
+        }
+        
     } while (true);
+    
+    bool result = false;
     
     if (choice == 1) {
         // 切换到中文
-        if (selectLanguage(Language::CHINESE)) {
-            std::cout << "语言已切换到中文" << std::endl;
+        result = I18nManager::getInstance().setLanguage(Language::CHINESE);
+        if (result) {
+            std::cout << getText("language_switched_chinese") << std::endl;
         } else {
-            std::cout << "切换语言失败 / Failed to switch language" << std::endl;
+            std::cout << getText("language_switch_failed") << std::endl;
         }
     } else if (choice == 2) {
         // 切换到英文
-        if (selectLanguage(Language::ENGLISH)) {
-            std::cout << "Language switched to English" << std::endl;
+        result = I18nManager::getInstance().setLanguage(Language::ENGLISH);
+        if (result) {
+            std::cout << getText("language_switched_english") << std::endl;
         } else {
-            std::cout << "Failed to switch language / 切换语言失败" << std::endl;
+            std::cout << getText("language_switch_failed") << std::endl;
         }
     }
     
-    // 无论选择哪种语言，都返回主菜单
+    // 看清提示信息，防止操作过快
     std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 void CourseSystem::showAdminMenu() {
-    // 删除 clearScreen() 调用
     
     std::cout << "========= " << getText("admin_menu") << " =========" << std::endl;
     std::cout << "1. " << getText("user_management") << std::endl;
     std::cout << "2. " << getText("course_management") << std::endl;
     std::cout << "3. " << getText("query_enrollment_records") << std::endl;
     std::cout << "4. " << getText("modify_password") << std::endl;
-    std::cout << "5. " << getText("modify_user_info") << std::endl;
+    std::cout << "5. " << getText("modify_account_info") << std::endl;
     std::cout << "6. " << getText("logout") << std::endl;
     std::cout << "7. " << getText("exit") << std::endl;
     std::cout << "==============================" << std::endl;
@@ -644,9 +467,11 @@ void CourseSystem::showAdminMenu() {
         switch (choice) {
             case 1:
             case 2:
-            case 3:
-            case 4:
+            case 3:           
                 handleAdminFunctions(choice);
+                break;
+            case 4:
+                handlePasswordChange();
                 break;
             case 5:
                 handleUserInfoModification(); // 处理修改用户信息
@@ -693,16 +518,30 @@ void CourseSystem::showTeacherMenu() {
         }
     } while (choice < 1 || choice > 6);
     
-    if (choice >= 1 && choice <= 2) {
-        handleTeacherFunctions(choice);
-    } else if (choice == 3) {
-        handlePasswordChange(); // 处理密码修改
-    } else if (choice == 4) {
-        handleUserInfoModification(); // 处理用户信息修改
-    } else if (choice == 5) {
-        logout();
-    } else {
-        shutdown();
+    try {
+        if (choice >= 1 && choice <= 2) {
+            handleTeacherFunctions(choice);
+        } else if (choice == 3) {
+            handlePasswordChange(); 
+        } else if (choice == 4) {
+            handleUserInfoModification(); 
+        } else if (choice == 5) {
+            logout();
+        } else {
+            shutdown();
+        }
+    } catch(const SystemException& e) {
+        Logger::getInstance().error("处理教师菜单选择时发生异常: " + e.getFormattedMessage());
+        std::cout << getText("system_error") << ": " << e.getFormattedMessage() << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+    } catch(const std::exception& e) {
+        Logger::getInstance().error("处理教师菜单选择时发生标准异常: " + std::string(e.what()));
+        std::cout << getText("system_error") << ": " << e.what() << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+    } catch(...) {
+        Logger::getInstance().error("处理教师菜单选择时发生未知异常");
+        std::cout << getText("system_error") << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 }
 
@@ -727,17 +566,30 @@ void CourseSystem::showStudentMenu() {
             std::cout << getText("invalid_input") << std::endl;
         }
     } while (choice < 1 || choice > 8);
-    
-    if (choice >= 1 && choice <= 4) {
-        handleStudentFunctions(choice);
-    } else if (choice == 5) {
-        handlePasswordChange(); // 处理密码修改
-    } else if (choice == 6) {
-        handleUserInfoModification(); // 处理用户信息修改
-    } else if (choice == 7) {
-        logout();
-    } else {
-        shutdown();
+    try{
+        if (choice >= 1 && choice <= 4) {
+            handleStudentFunctions(choice);
+        } else if (choice == 5) {
+            handlePasswordChange(); 
+        } else if (choice == 6) {
+            handleUserInfoModification(); 
+        } else if (choice == 7) {
+            logout();
+        } else {
+            shutdown();
+        }
+    }catch(const SystemException& e){
+        Logger::getInstance().error("处理学生菜单选择时发生异常: " + e.getFormattedMessage());
+        std::cout << getText("system_error") << ": " << e.getFormattedMessage() << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+    }catch(const std::exception& e){
+        Logger::getInstance().error("处理学生菜单选择时发生标准异常: " + std::string(e.what()));
+        std::cout << getText("system_error") << ": " << e.what() << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+    }catch(...){
+        Logger::getInstance().error("处理学生菜单选择时发生未知异常");
+        std::cout << getText("system_error") << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 }
 
@@ -745,11 +597,9 @@ void CourseSystem::handleAdminFunctions(int choice) {
     // 定义最大尝试次数常量，在整个函数中共用
     const int MAX_ATTEMPTS = 3;
     
-    // 这里只是示例，实际应该实现完整的管理功能
     switch (choice) {
         case 1: { // 用户管理
             std::cout << getText("user_management_function") << std::endl;
-            // 实现更完整的用户管理功能
             bool subMenuRunning = true;
             while (subMenuRunning && running_) {
                 std::cout << "1. " << getText("add_user") << std::endl;
@@ -778,8 +628,9 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         std::cout << "2. " << getText("teacher_type") << std::endl;
                         std::cout << "3. " << getText("admin_type") << std::endl;
                         
-                        int userType = 0;
+                        int userType;
                         std::string userTypeInput;
+                        int attempts = 0;
                         std::cout << "> ";
                         std::getline(std::cin, userTypeInput);
                         
@@ -788,29 +639,22 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             break;
                         }
                         
-                        // 收集通用用户信息
+                        // 添加通用用户信息
                         std::string userId, name, password, gender;
                         
                         std::cout << getText("enter_user_id_prompt") << "：";
                         std::getline(std::cin, userId);
                         
                         // 添加用户ID非空验证
-                        if (userId.empty()) {
-                            int attempts = 0;
-                            const int MAX_ATTEMPTS = 3;
-                            while (userId.empty() && attempts < MAX_ATTEMPTS) {
-                                attempts++;
-                                std::cout << getText("input_cannot_be_empty") << std::endl;
-                                std::cout << getText("enter_user_id_prompt") << "：";
-                                std::getline(std::cin, userId);
-                                
-                                if (attempts >= MAX_ATTEMPTS && userId.empty()) {
-                                    std::cout << getText("too_many_attempts") << std::endl;
-                                    break;
-                                }
-                            }
+                        attempts = 0;
+                        while (InputValidator::isEmptyInput(userId) && attempts < MAX_ATTEMPTS) {
+                            attempts++;
+                            std::cout << getText("input_cannot_be_empty") << std::endl;
+                            std::cout << getText("enter_user_id_prompt") << "：";
+                            std::getline(std::cin, userId);
                             
-                            if (userId.empty()) {
+                            if (attempts >= MAX_ATTEMPTS && InputValidator::isEmptyInput(userId)) {
+                                std::cout << getText("too_many_attempts") << std::endl;
                                 break;
                             }
                         }
@@ -825,22 +669,15 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         std::getline(std::cin, name);
                         
                         // 添加用户名非空验证
-                        if (name.empty()) {
-                            int attempts = 0;
-                            const int MAX_ATTEMPTS = 3;
-                            while (name.empty() && attempts < MAX_ATTEMPTS) {
-                                attempts++;
-                                std::cout << getText("username_cannot_be_empty") << std::endl;
-                                std::cout << getText("enter_username") << "：";
-                                std::getline(std::cin, name);
+                        attempts = 0;
+                        while (InputValidator::isEmptyInput(name) && attempts < MAX_ATTEMPTS) {
+                            attempts++;
+                            std::cout << getText("username_cannot_be_empty") << std::endl;
+                            std::cout << getText("enter_username") << "：";
+                            std::getline(std::cin, name);
                                 
-                                if (attempts >= MAX_ATTEMPTS && name.empty()) {
-                                    std::cout << getText("too_many_attempts") << std::endl;
-                                    break;
-                                }
-                            }
-                            
-                            if (name.empty()) {
+                            if (attempts >= MAX_ATTEMPTS && InputValidator::isEmptyInput(name)) {
+                                std::cout << getText("too_many_attempts") << std::endl;
                                 break;
                             }
                         }
@@ -849,50 +686,41 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         std::getline(std::cin, password);
                         
                         // 添加密码非空验证
-                        if (password.empty()) {
-                            int attempts = 0;
-                            const int MAX_ATTEMPTS = 3;
-                            while (password.empty() && attempts < MAX_ATTEMPTS) {
-                                attempts++;
+                        attempts = 0;
+                        while (InputValidator::isEmptyInput(password) && attempts < MAX_ATTEMPTS) {
+                            attempts++;
                                 std::cout << getText("password_cannot_be_empty") << std::endl;
                                 std::cout << getText("enter_user_password") << "：";
                                 std::getline(std::cin, password);
                                 
-                                if (attempts >= MAX_ATTEMPTS && password.empty()) {
-                                    std::cout << getText("too_many_attempts") << std::endl;
-                                    break;
-                                }
-                            }
-                            
-                            if (password.empty()) {
+                            if (attempts >= MAX_ATTEMPTS && InputValidator::isEmptyInput(password)) {
+                                std::cout << getText("too_many_attempts") << std::endl;
                                 break;
                             }
                         }
                         
                         // 性别选择菜单
                         std::cout << getText("enter_user_gender") << "：" << std::endl;
-                        std::cout << "1. Male" << std::endl;
-                        std::cout << "2. Female" << std::endl;
+                        std::cout << "1. " << getText("gender_male") << std::endl;
+                        std::cout << "2. " << getText("gender_female") << std::endl;
                         
-                        int genderChoice = 0;
+                        int genderChoice;
                         std::string genderInput;
-                        bool validGender = false;
                         int genderAttempts = 0;
-                        const int MAX_ATTEMPTS = 3;
-                        
-                        while (!validGender && genderAttempts < MAX_ATTEMPTS) {
+
+                        while (genderAttempts < MAX_ATTEMPTS) {
                             std::cout << "> ";
                             std::getline(std::cin, genderInput);
                             genderAttempts++;
                             
                             if (InputValidator::validateChoice(genderInput, 1, 2, genderChoice)) {
                                 gender = (genderChoice == 1) ? "male" : "female";
-                                validGender = true;
+                                break;
                             } else {
                                 std::cout << getText("invalid_choice") << std::endl;
                                 if (genderAttempts >= MAX_ATTEMPTS) {
                                     std::cout << getText("too_many_attempts") << std::endl;
-                                    return;
+                                    break;
                                 }
                             }
                         }
@@ -904,16 +732,14 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             std::cout << getText("enter_student_age") << "：";
                             
                             int ageValue = 0;
-                            bool validAge = false;
                             int ageAttempts = 0;
-                            const int MAX_ATTEMPTS = 3;
-                            
-                            while (!validAge && ageAttempts < MAX_ATTEMPTS) {
+ 
+                            while (ageAttempts < MAX_ATTEMPTS) {
                                 std::getline(std::cin, age);
                                 ageAttempts++;
                                 
-                                if (InputValidator::validateInteger(age, 15, 100, ageValue)) {
-                                    validAge = true;
+                                if (InputValidator::validateInteger(age, 15, 80, ageValue)) {
+                                    break;
                                 } else {
                                     std::cout << getText("invalid_age") << std::endl;
                                     if (ageAttempts >= MAX_ATTEMPTS) {
@@ -923,83 +749,55 @@ void CourseSystem::handleAdminFunctions(int choice) {
                                     std::cout << getText("enter_student_age") << "：";
                                 }
                             }
-                            
-                            if (!validAge) {
-                                break;
-                            }
-                            
-                            // 删除这几行，因为在下面的重试逻辑中已经处理了
-                            
-                            // 收集部门信息
+                           
                             std::cout << getText("enter_department") << "：";
                             std::getline(std::cin, department);
                             
-                            if (department.empty()) {
-                                int attempts = 0;
-                                while (department.empty() && attempts < MAX_ATTEMPTS) {
-                                    attempts++;
-                                    std::cout << getText("department_cannot_be_empty") << std::endl;
-                                    std::cout << getText("enter_department") << "：";
-                                    std::getline(std::cin, department);
+                            attempts = 0;
+                            while (InputValidator::isEmptyInput(department) && attempts < MAX_ATTEMPTS) {
+                                attempts++;
+                                std::cout << getText("department_cannot_be_empty") << std::endl;
+                                std::cout << getText("enter_department") << "：";
+                                std::getline(std::cin, department);
                                     
-                                    if (attempts >= MAX_ATTEMPTS && department.empty()) {
-                                        std::cout << getText("too_many_attempts") << std::endl;
-                                        break;
-                                    }
+                                if (attempts >= MAX_ATTEMPTS && InputValidator::isEmptyInput(department)) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
+                                    break;
                                 }
                             }
-                            
-                            if (department.empty()) {
-                                break;
-                            }
-                            
-                            // 收集班级信息
+                           
                             std::cout << getText("enter_class_info") << "：";
                             std::getline(std::cin, classInfo);
                             
-                            if (classInfo.empty()) {
-                                int attempts = 0;
-                                while (classInfo.empty() && attempts < MAX_ATTEMPTS) {
-                                    attempts++;
-                                    std::cout << getText("class_info_cannot_be_empty") << std::endl;
-                                    std::cout << getText("enter_class_info") << "：";
-                                    std::getline(std::cin, classInfo);
+                            attempts = 0;
+                            while (InputValidator::isEmptyInput(classInfo) && attempts < MAX_ATTEMPTS) {
+                                attempts++;
+                                std::cout << getText("class_info_cannot_be_empty") << std::endl;
+                                std::cout << getText("enter_class_info") << "：";
+                                std::getline(std::cin, classInfo);
                                     
-                                    if (attempts >= MAX_ATTEMPTS && classInfo.empty()) {
-                                        std::cout << getText("too_many_attempts") << std::endl;
-                                        break;
-                                    }
+                                if (attempts >= MAX_ATTEMPTS && InputValidator::isEmptyInput(classInfo)) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
+                                    break;
                                 }
                             }
-                            
-                            if (classInfo.empty()) {
-                                break;
-                            }
-                            
-                            // 收集邮箱信息
+                           
                             std::cout << getText("enter_email") << "：";
                             std::getline(std::cin, email);
                             
-                            // 添加邮箱非空验证
-                            if (email.empty()) {
-                                int attempts = 0;
-                                const int MAX_ATTEMPTS = 3;
-                                while (email.empty() && attempts < MAX_ATTEMPTS) {
-                                    attempts++;
+                            attempts = 0;
+                            while (InputValidator::isEmptyInput(email) && attempts < MAX_ATTEMPTS) {
+                                attempts++;
                                     std::cout << getText("input_cannot_be_empty") << std::endl;
                                     std::cout << getText("enter_email") << "：";
                                     std::getline(std::cin, email);
                                     
-                                    if (attempts >= MAX_ATTEMPTS && email.empty()) {
+                                if (attempts >= MAX_ATTEMPTS && InputValidator::isEmptyInput(email)) {
                                         std::cout << getText("too_many_attempts") << std::endl;
                                         break;
                                     }
-                                }
-                                
-                                if (email.empty()) {
-                                    break;
-                                }
                             }
+                            
                             
                             // 创建学生对象
                             std::unique_ptr<Student> student = std::make_unique<Student>(
@@ -1020,23 +818,15 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             std::cout << getText("enter_teacher_title") << "：";
                             std::getline(std::cin, title);
                             
-                            // 添加职称非空验证
-                            if (title.empty()) {
-                                int attempts = 0;
-                                const int MAX_ATTEMPTS = 3;
-                                while (title.empty() && attempts < MAX_ATTEMPTS) {
-                                    attempts++;
-                                    std::cout << getText("input_cannot_be_empty") << std::endl;
-                                    std::cout << getText("enter_teacher_title") << "：";
-                                    std::getline(std::cin, title);
+                            attempts = 0;
+                            while (InputValidator::isEmptyInput(title) && attempts < MAX_ATTEMPTS) {
+                                attempts++;
+                                std::cout << getText("input_cannot_be_empty") << std::endl;
+                                std::cout << getText("enter_teacher_title") << "：";
+                                std::getline(std::cin, title);
                                     
-                                    if (attempts >= MAX_ATTEMPTS && title.empty()) {
-                                        std::cout << getText("too_many_attempts") << std::endl;
-                                        break;
-                                    }
-                                }
-                                
-                                if (title.empty()) {
+                                if (attempts >= MAX_ATTEMPTS && InputValidator::isEmptyInput(title)) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
                                     break;
                                 }
                             }
@@ -1045,46 +835,31 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             std::getline(std::cin, department);
                             
                             // 添加院系非空验证
-                            if (department.empty()) {
-                                int attempts = 0;
-                                const int MAX_ATTEMPTS = 3;
-                                while (department.empty() && attempts < MAX_ATTEMPTS) {
-                                    attempts++;
-                                    std::cout << getText("department_cannot_be_empty") << std::endl;
-                                    std::cout << getText("enter_teacher_department") << "：";
-                                    std::getline(std::cin, department);
+                            attempts = 0;
+                            while (InputValidator::isEmptyInput(department) && attempts < MAX_ATTEMPTS) {
+                                attempts++;
+                                std::cout << getText("department_cannot_be_empty") << std::endl;
+                                std::cout << getText("enter_teacher_department") << "：";
+                                std::getline(std::cin, department);
                                     
-                                    if (attempts >= MAX_ATTEMPTS && department.empty()) {
-                                        std::cout << getText("too_many_attempts") << std::endl;
-                                        break;
-                                    }
-                                }
-                                
-                                if (department.empty()) {
+                                if (attempts >= MAX_ATTEMPTS && InputValidator::isEmptyInput(department)) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
                                     break;
                                 }
                             }
                             
                             std::cout << getText("enter_email") << "：";
                             std::getline(std::cin, email);
-                            
-                            // 添加邮箱非空验证
-                            if (email.empty()) {
-                                int attempts = 0;
-                                const int MAX_ATTEMPTS = 3;
-                                while (email.empty() && attempts < MAX_ATTEMPTS) {
-                                    attempts++;
-                                    std::cout << getText("input_cannot_be_empty") << std::endl;
-                                    std::cout << getText("enter_email") << "：";
-                                    std::getline(std::cin, email);
+                           
+                            attempts = 0;
+                            while (InputValidator::isEmptyInput(email) && attempts < MAX_ATTEMPTS) {
+                                attempts++;
+                                std::cout << getText("input_cannot_be_empty") << std::endl;
+                                std::cout << getText("enter_email") << "：";
+                                std::getline(std::cin, email);
                                     
-                                    if (attempts >= MAX_ATTEMPTS && email.empty()) {
-                                        std::cout << getText("too_many_attempts") << std::endl;
-                                        break;
-                                    }
-                                }
-                                
-                                if (email.empty()) {
+                                if (attempts >= MAX_ATTEMPTS && InputValidator::isEmptyInput(email)) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
                                     break;
                                 }
                             }
@@ -1102,32 +877,6 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             }
                             
                         } else {  // 管理员
-                            std::string role;
-                            
-                            std::cout << getText("enter_admin_role") << "：";
-                            std::getline(std::cin, role);
-                            
-                            // 添加角色非空验证
-                            if (role.empty()) {
-                                int attempts = 0;
-                                const int MAX_ATTEMPTS = 3;
-                                while (role.empty() && attempts < MAX_ATTEMPTS) {
-                                    attempts++;
-                                    std::cout << getText("input_cannot_be_empty") << std::endl;
-                                    std::cout << getText("enter_admin_role") << "：";
-                                    std::getline(std::cin, role);
-                                    
-                                    if (attempts >= MAX_ATTEMPTS && role.empty()) {
-                                        std::cout << getText("too_many_attempts") << std::endl;
-                                        break;
-                                    }
-                                }
-                                
-                                if (role.empty()) {
-                                    break;
-                                }
-                            }
-                            
                             // 创建管理员对象
                             std::unique_ptr<Admin> admin = std::make_unique<Admin>(
                                 userId, name, password
@@ -1310,20 +1059,19 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             
                             // 根据用户类型显示不同的信息
                             if (user->getType() == UserType::STUDENT) {
-                                Student* student = static_cast<Student*>(user);
+                                Student* student = dynamic_cast<Student*>(user);
                                 std::cout << getText("age") << ": " << student->getAge() << std::endl;
                                 std::cout << getText("gender") << ": " << student->getGender() << std::endl;
                                 std::cout << getText("department") << ": " << student->getDepartment() << std::endl;
                                 std::cout << getText("class") << ": " << student->getClassInfo() << std::endl;
-                                std::cout << getText("enter_email") << ": " << student->getContact() << std::endl;
+                                std::cout << getText("email_address") << ": " << student->getContact() << std::endl;
                             } else if (user->getType() == UserType::TEACHER) {
-                                Teacher* teacher = static_cast<Teacher*>(user);
+                                Teacher* teacher = dynamic_cast<Teacher*>(user);
                                 std::cout << getText("title") << ": " << teacher->getTitle() << std::endl;
                                 std::cout << getText("department") << ": " << teacher->getDepartment() << std::endl;
-                                std::cout << getText("enter_email") << ": " << teacher->getContact() << std::endl;
+                                std::cout << getText("email_address") << ": " << teacher->getContact() << std::endl;
                             } else if (user->getType() == UserType::ADMIN) {
                                 // Admin类没有额外属性需要显示
-                                // 管理员类没有email属性，不显示联系方式
                             }
                             std::cout << "--------------------------------" << std::endl;
                             
@@ -1340,7 +1088,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             std::cout << getText("user_id") << "\t" << getText("user_name") << "\t" 
                                       << getText("age") << "\t" << getText("gender") << "\t"
                                       << getText("department") << "\t" << getText("class") << "\t"
-                                      << getText("enter_email") << std::endl;
+                                      << getText("email_address") << std::endl;
                             
                             for (const std::string& studentId : studentIds) {
                                 Student* student = userManager.getStudent(studentId);
@@ -1369,7 +1117,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             std::cout << "--------------------------------" << std::endl;
                             std::cout << getText("user_id") << "\t" << getText("user_name") << "\t" 
                                       << getText("title") << "\t" << getText("department") << "\t"
-                                      << getText("enter_email") << std::endl;
+                                      << getText("email_address") << std::endl;
                             
                             for (const std::string& teacherId : teacherIds) {
                                 Teacher* teacher = userManager.getTeacher(teacherId);
@@ -1426,6 +1174,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
             
         case 2: { // 课程管理
             std::cout << getText("course_management_function") << std::endl;
+            
             // 实现更完整的课程管理功能
             bool subMenuRunning = true;
             while (subMenuRunning && running_) {
@@ -1445,34 +1194,33 @@ void CourseSystem::handleAdminFunctions(int choice) {
                     continue;
                 }
                 
+                if (subChoice == 5) {
+                    subMenuRunning = false;
+                    continue;
+                }
+                
+                // 根据用户选择执行相应操作
                 switch (subChoice) {
                     case 1: { // 添加课程
                         // 获取课程管理器
                         CourseManager& courseManager = CourseManager::getInstance();
                         
-                        // 收集课程信息
+                        // 添加课程信息
                         std::string courseId, name, typeStr, creditStr, hoursStr, semester, teacherId, maxCapacityStr;
                         
                         std::cout << getText("enter_course_id") << "：";
                         std::getline(std::cin, courseId);
                         
                         // 添加课程ID非空验证
-                        if (courseId.empty()) {
-                            int attempts = 0;
-                            const int MAX_ATTEMPTS = 3;
-                            while (courseId.empty() && attempts < MAX_ATTEMPTS) {
-                                attempts++;
-                                std::cout << getText("input_cannot_be_empty") << std::endl;
-                                std::cout << getText("enter_course_id") << "：";
-                                std::getline(std::cin, courseId);
+                        int attempts = 0;
+                        while (InputValidator::isEmptyInput(courseId) && attempts < MAX_ATTEMPTS) {
+                            attempts++;
+                            std::cout << getText("input_cannot_be_empty") << std::endl;
+                            std::cout << getText("enter_course_id") << "：";
+                            std::getline(std::cin, courseId);
                                 
-                                if (attempts >= MAX_ATTEMPTS && courseId.empty()) {
-                                    std::cout << getText("too_many_attempts") << std::endl;
-                                    break;
-                                }
-                            }
-                            
-                            if (courseId.empty()) {
+                            if (attempts >= MAX_ATTEMPTS && InputValidator::isEmptyInput(courseId)) {
+                                std::cout << getText("too_many_attempts") << std::endl;
                                 break;
                             }
                         }
@@ -1480,29 +1228,22 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         // 检查课程ID是否已存在
                         if (courseManager.hasCourse(courseId)) {
                             std::cout << getText("course_id_exists") << std::endl;
-                            break;
+                            continue;
                         }
                         
                         std::cout << getText("enter_course_name") << "：";
                         std::getline(std::cin, name);
                         
                         // 添加课程名称非空验证
-                        if (name.empty()) {
-                            int attempts = 0;
-                            const int MAX_ATTEMPTS = 3;
-                            while (name.empty() && attempts < MAX_ATTEMPTS) {
-                                attempts++;
-                                std::cout << getText("course_name_cannot_be_empty") << std::endl;
-                                std::cout << getText("enter_course_name") << "：";
-                                std::getline(std::cin, name);
+                        attempts = 0;
+                        while (InputValidator::isEmptyInput(name) && attempts < MAX_ATTEMPTS) {
+                            attempts++;
+                            std::cout << getText("course_name_cannot_be_empty") << std::endl;
+                            std::cout << getText("enter_course_name") << "：";
+                            std::getline(std::cin, name);
                                 
-                                if (attempts >= MAX_ATTEMPTS && name.empty()) {
-                                    std::cout << getText("too_many_attempts") << std::endl;
-                                    break;
-                                }
-                            }
-                            
-                            if (name.empty()) {
+                            if (attempts >= MAX_ATTEMPTS && InputValidator::isEmptyInput(name)) {
+                                std::cout << getText("too_many_attempts") << std::endl;
                                 break;
                             }
                         }
@@ -1514,12 +1255,22 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         
                         int typeChoice = 0;
                         std::string typeInput;
-                        std::cout << "> ";
-                        std::getline(std::cin, typeInput);
-                        
-                        if (!InputValidator::validateChoice(typeInput, 1, 2, typeChoice)) {
-                            std::cout << getText("invalid_course_type") << std::endl;
-                            break;
+                        int typeAttempts = 0;
+                
+                        while (typeAttempts < MAX_ATTEMPTS) {
+                            std::cout << "> ";
+                            std::getline(std::cin, typeInput);
+                            typeAttempts++;
+                            
+                            if (InputValidator::validateChoice(typeInput, 1, 2, typeChoice)) {
+                                break;
+                            } else {
+                                std::cout << getText("invalid_course_type") << std::endl;
+                                if (typeAttempts >= MAX_ATTEMPTS) {
+                                    std::cout << getText("too_many_attempts") << std::endl;
+                                    break;
+                                }
+                            }
                         }
                         
                         CourseType type;
@@ -1538,15 +1289,14 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         std::cout << getText("enter_credit") << "：";
                         
                         double credit = 0.0;
-                        bool validCredit = false;
                         int creditAttempts = 0;
                         
-                        while (!validCredit && creditAttempts < MAX_ATTEMPTS) {
+                        while (creditAttempts < MAX_ATTEMPTS) {
                             std::getline(std::cin, creditStr);
                             creditAttempts++;
                             
                             if (InputValidator::validateDouble(creditStr, 0.0, 10.0, credit)) {
-                                validCredit = true;
+                                break;
                             } else {
                                 std::cout << getText("invalid_credit") << std::endl;
                                 if (creditAttempts >= MAX_ATTEMPTS) {
@@ -1557,20 +1307,15 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             }
                         }
                         
-                        if (!validCredit) {
-                            break;
-                        }
-                        
                         std::cout << getText("enter_hours") << "：";
                         std::getline(std::cin, hoursStr);
                         
                         int hours = 0;
-                        bool validHours = false;
                         int hoursAttempts = 0;
-                        while (!validHours && hoursAttempts < MAX_ATTEMPTS) {
+                        while (hoursAttempts < MAX_ATTEMPTS) {
                             hoursAttempts++;
                             if (InputValidator::validateInteger(hoursStr, 0, 200, hours)) {
-                                validHours = true;
+                                break;
                             } else {
                                 std::cout << getText("invalid_hours") << std::endl;
                                 if (hoursAttempts >= MAX_ATTEMPTS) {
@@ -1582,32 +1327,23 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             }
                         }
                         
-                        if (!validHours) {
-                            break;
-                        }
-                        
                         std::cout << getText("enter_semester") << "：";
                         std::getline(std::cin, semester);
                         
                         // 添加学期非空验证
-                        if (semester.empty()) {
-                            int attempts = 0;
-                            while (semester.empty() && attempts < MAX_ATTEMPTS) {
-                                attempts++;
-                                std::cout << getText("semester_cannot_be_empty") << std::endl;
-                                std::cout << getText("enter_semester") << "：";
-                                std::getline(std::cin, semester);
-                                
-                                if (attempts >= MAX_ATTEMPTS && semester.empty()) {
-                                    std::cout << getText("too_many_attempts") << std::endl;
-                                    break;
-                                }
-                            }
+                        attempts = 0;
+                        while (InputValidator::isEmptyInput(semester) && attempts < MAX_ATTEMPTS) {
+                            attempts++;
+                            std::cout << getText("semester_cannot_be_empty") << std::endl;
+                            std::cout << getText("enter_semester") << "：";
+                            std::getline(std::cin, semester);
                             
-                            if (semester.empty()) {
+                            if (attempts >= MAX_ATTEMPTS && InputValidator::isEmptyInput(semester)) {
+                                std::cout << getText("too_many_attempts") << std::endl;
                                 break;
                             }
                         }
+                        
                         
                         // 获取并显示所有教师列表
                         UserManager& userManager = UserManager::getInstance();
@@ -1615,7 +1351,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         
                         if (teacherIds.empty()) {
                             std::cout << getText("no_teachers") << std::endl;
-                            break;
+                            continue;
                         }
                         
                         std::cout << getText("available_teachers") << "：" << std::endl;
@@ -1634,15 +1370,14 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         
                         std::cout << getText("enter_teacher_id") << "：";
                         
-                        bool validTeacherId = false;
                         int teacherAttempts = 0;
                         
-                        while (!validTeacherId && teacherAttempts < MAX_ATTEMPTS) {
+                        while (teacherAttempts < MAX_ATTEMPTS) {
                             std::getline(std::cin, teacherId);
                             teacherAttempts++;
                             
                             if (userManager.getTeacher(teacherId)) {
-                                validTeacherId = true;
+                                break;
                             } else {
                                 std::cout << getText("teacher_id_not_exists") << std::endl;
                                 if (teacherAttempts >= MAX_ATTEMPTS) {
@@ -1653,22 +1388,17 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             }
                         }
                         
-                        if (!validTeacherId) {
-                            break;
-                        }
-                        
                         std::cout << getText("enter_max_capacity") << "：";
                         
                         int maxCapacity = 0;
-                        bool validMaxCapacity = false;
                         int maxCapacityAttempts = 0;
                         
-                        while (!validMaxCapacity && maxCapacityAttempts < MAX_ATTEMPTS) {
+                        while (maxCapacityAttempts < MAX_ATTEMPTS) {
                             std::getline(std::cin, maxCapacityStr);
                             maxCapacityAttempts++;
                             
                             if (InputValidator::validateInteger(maxCapacityStr, 1, 1000, maxCapacity)) {
-                                validMaxCapacity = true;
+                                break;
                             } else {
                                 std::cout << getText("invalid_max_capacity") << std::endl;
                                 if (maxCapacityAttempts >= MAX_ATTEMPTS) {
@@ -1679,27 +1409,18 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             }
                         }
                         
-                        if (!validMaxCapacity) {
-                            break;
-                        }
                         
-                        try {
-                            // 创建课程对象
-                            std::unique_ptr<Course> course = std::make_unique<Course>(
-                                courseId, name, type, credit, hours, 
-                                semester, teacherId, maxCapacity
-                            );
+                        // 创建课程对象
+                        std::unique_ptr<Course> course = std::make_unique<Course>(
+                            courseId, name, type, credit, hours, 
+                            semester, teacherId, maxCapacity
+                        );
                             
                             // 添加课程
-                            if (courseManager.addCourse(std::move(course))) {
-                                std::cout << getText("add_course_success") << std::endl;
-                                // 保存数据
-                                courseManager.saveData();
-                            } else {
-                                std::cout << getText("add_course_failed") << std::endl;
-                            }
-                        } catch (const std::exception& e) {
-                            std::cout << getText("adding_course_error") << ": " << e.what() << std::endl;
+                        if (courseManager.addCourse(std::move(course))) {
+                            std::cout << getText("add_course_success") << std::endl;
+                        } else {
+                            std::cout << getText("add_course_failed") << std::endl;
                         }
                         break;
                     }
@@ -1713,26 +1434,21 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         
                         if (allCourseIds.empty()) {
                             std::cout << getText("no_courses") << std::endl;
-                            break;
+                            continue;
                         }
                         
-                        std::cout << "所有课程：" << std::endl;
+                        std::cout << getText("all_courses") << "：" << std::endl;
                         std::cout << "--------------------------------" << std::endl;
                         std::cout << getText("course_id") << "\t" 
-                                  << getText("course_name") << "\t" 
-                                  << getText("course_type") << "\t"
-                                  << getText("credit") << "\t"
-                                  << getText("current_enrollment") << "/" << getText("max_capacity") << std::endl;
+                                << getText("course_name") << "\t" 
+                                << getText("course_type") << std::endl;
                         
                         for (const std::string& id : allCourseIds) {
                             Course* course = courseManager.getCourse(id);
                             if (course) {
                                 std::cout << course->getId() << "\t"
-                                          << course->getName() << "\t"
-                                          << course->getTypeString() << "\t"
-                                          << course->getCredit() << "\t"
-                                          << course->getCurrentEnrollment() << "/"
-                                          << course->getMaxCapacity() << std::endl;
+                                        << course->getName() << "\t"
+                                        << course->getTypeString() << std::endl;
                             }
                         }
                         std::cout << "--------------------------------" << std::endl;
@@ -1746,7 +1462,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         Course* course = courseManager.getCourse(courseId);
                         if (!course) {
                             std::cout << getText("course_id_not_exists") << std::endl;
-                            break;
+                            continue;
                         }
                         
                         // 显示课程信息
@@ -1779,9 +1495,6 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             // 删除课程
                             if (courseManager.removeCourse(courseId)) {
                                 std::cout << getText("delete_course_success") << std::endl;
-                                // 保存数据
-                                courseManager.saveData();
-                                enrollmentManager.saveData();
                             } else {
                                 std::cout << getText("delete_course_failed") << std::endl;
                             }
@@ -1853,7 +1566,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
                         std::cout << "7. " << getText("modify_max_capacity") << std::endl;
                         std::cout << "8. " << getText("return") << std::endl;
                         
-                        int modifyChoice = 0;
+                        int modifyChoice;
                         std::string modifyInput;
                         std::cout << "> ";
                         std::getline(std::cin, modifyInput);
@@ -1869,7 +1582,10 @@ void CourseSystem::handleAdminFunctions(int choice) {
                                 std::string newName;
                                 std::cout << getText("enter_new_course_name") << "：";
                                 std::getline(std::cin, newName);
-                                
+                                if (newName.empty()) {
+                                    std::cout << getText("course_name_cannot_be_empty") << std::endl;
+                                    break;
+                                }
                                 course->setName(newName);
                                 std::cout << getText("course_name_modify_success") << std::endl;
                                 break;
@@ -1940,7 +1656,10 @@ void CourseSystem::handleAdminFunctions(int choice) {
                                 std::string newSemester;
                                 std::cout << getText("enter_new_semester") << "：";
                                 std::getline(std::cin, newSemester);
-                                
+                                if (newSemester.empty()) {
+                                    std::cout << getText("invalid_input") << std::endl;
+                                    break;
+                                }
                                 course->setSemester(newSemester);
                                 std::cout << getText("course_semester_modify_success") << std::endl;
                                 break;
@@ -2057,7 +1776,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
                                 std::cout << getText("enter_course_name") << "：";
                                 std::string courseName;
                                 std::getline(std::cin, courseName);
-                                
+                                //lambda表达式,返回值为bool类型，findcourses的形参为谓词，find为标准库中string的成员函数
                                 courseIds = courseManager.findCourses(
                                     [courseName](const Course& c) { 
                                         return c.getName().find(courseName) != std::string::npos; 
@@ -2080,7 +1799,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
                                 std::cout << "1. " << getText("required_course") << std::endl;
                                 std::cout << "2. " << getText("elective_course") << std::endl;
                                 
-                                int typeChoice = 0;
+                                int typeChoice;
                                 std::string typeInput;
                                 std::cout << "> ";
                                 std::getline(std::cin, typeInput);
@@ -2152,6 +1871,9 @@ void CourseSystem::handleAdminFunctions(int choice) {
                     case 5: // 返回上级菜单
                         subMenuRunning = false;
                         break;
+                    default:
+                        std::cout << getText("invalid_choice") << std::endl;
+                        break;
                 }
             }
             break;
@@ -2170,7 +1892,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
                 std::cout << "2. " << getText("query_by_course") << std::endl;
                 std::cout << "3. " << getText("return_to_parent_menu") << std::endl;
                 
-                int subChoice = 0;
+                int subChoice;
                 std::string input;
                 std::cout << "> ";
                 std::getline(std::cin, input);
@@ -2257,7 +1979,7 @@ void CourseSystem::handleAdminFunctions(int choice) {
                             UserManager& userManager = UserManager::getInstance();
                             for (Enrollment* enrollment : enrollments) {
                                 std::string studentId = enrollment->getStudentId();
-                                Student* student = static_cast<Student*>(userManager.getStudent(studentId));
+                                Student* student = dynamic_cast<Student*>(userManager.getStudent(studentId));
                                 
                                 if (student) {
                                     std::cout << student->getId() << "\t"
@@ -2281,19 +2003,12 @@ void CourseSystem::handleAdminFunctions(int choice) {
             }
             break;
         }
-            
-        case 4: { // 修改密码
-            handlePasswordChange();
-            break;
-        }
-            
         default:
             break;
     }
 }
 
 void CourseSystem::handleStudentFunctions(int choice) {
-    // 这里只是示例，实际应该实现完整的学生功能
     switch (choice) {
         case 1: { // 查询课程
             std::cout << getText("query_courses_function") << std::endl;
@@ -2428,9 +2143,6 @@ void CourseSystem::handleStudentFunctions(int choice) {
                     enrolledCourseIds.push_back(enrollment->getCourseId());
                 }
                 
-                // 确保获取最新数据
-                courseManager.loadData();
-                
                 for (const std::string& courseId : allCourseIds) {
                     Course* course = courseManager.getCourse(courseId);
                     if (course) {
@@ -2472,8 +2184,7 @@ void CourseSystem::handleStudentFunctions(int choice) {
                             // 显示选课成功后的课程信息
                             Course* course = courseManager.getCourse(courseId);
                             if (course) {
-                                std::string courseName = course->getName();
-                                std::cout << getText("course") << " " << courseName << " " 
+                                std::cout << getText("course") << " " << course->getName() << " " 
                                           << getText("current_enrollment") << ": " 
                                           << course->getCurrentEnrollment() << "/" 
                                           << course->getMaxCapacity() << std::endl;
@@ -2629,7 +2340,7 @@ bool CourseSystem::changePassword(const std::string& userId, const std::string& 
     try {
         // 权限检查：用户只能修改自己的密码
         if (currentUser_ == nullptr) {
-            Logger::getInstance().warning("修改密码失败：用户未登录");
+            Logger::getInstance().error("修改密码失败：用户未登录");
             return false;
         }
         
@@ -2668,11 +2379,10 @@ bool CourseSystem::changePassword(const std::string& userId, const std::string& 
     }
 }
 
-// 添加在其他函数实现之后，比如在changePassword方法后面
-
 void CourseSystem::handlePasswordChange() {
     if (!currentUser_) {
         std::cout << getText("operation_failed") << ": " << getText("password_change_failed") << std::endl;
+        Logger::getInstance().error("修改密码失败：用户未登录");
         return;
     }
     
@@ -2701,19 +2411,10 @@ void CourseSystem::handlePasswordChange() {
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
-// 显式实例化常用的模板函数，解决链接错误
-template std::string CourseSystem::getFormattedText(const std::string& key, int) const;
-template std::string CourseSystem::getFormattedText(const std::string& key, const std::string&) const;
-template std::string CourseSystem::getFormattedText(const std::string& key, const char*) const;
-
-
-
 void CourseSystem::handleTeacherFunctions(int choice) {
-    // 这里只是示例，实际应该实现完整的教师功能
     switch (choice) {
         case 1: { // 查看课程
             std::cout << getText("view_courses_function") << std::endl;
-            // 实现更完整的查看课程功能
             
             // 获取教师ID
             std::string teacherId = currentUser_->getId();
@@ -2789,15 +2490,23 @@ void CourseSystem::handleTeacherFunctions(int choice) {
                 // 选择要查看的课程
                 int courseIndex = 0;
                 std::string input;
-                do {
+                int attempts = 0;
+                const int MAX_ATTEMPTS = 3;
+                
+                while (attempts < MAX_ATTEMPTS) {
                     std::cout << getFormattedText("select_course_to_view", static_cast<int>(teacherCourseIds.size())) << "：";
                     std::getline(std::cin, input);
-                    
-                    if (input == "0") {
-                        return; // 用户选择返回
+                    attempts++;     
+                    if (InputValidator::validateChoice(input, 1, teacherCourseIds.size(), courseIndex)) {
+                        break;
+                    } else {
+                        std::cout << getText("invalid_input") << std::endl;
+                        if (attempts >= MAX_ATTEMPTS) {
+                            std::cout << getText("too_many_attempts") << std::endl;
+                            break;
+                        }
                     }
-                    
-                } while (!InputValidator::validateChoice(input, 1, teacherCourseIds.size(), courseIndex));
+                }
                 
                 // 获取选定的课程
                 std::string selectedCourseId = teacherCourseIds[courseIndex-1];
@@ -2815,8 +2524,8 @@ void CourseSystem::handleTeacherFunctions(int choice) {
                         std::cout << getText("user_id") << "\t" 
                                   << getText("user_name") << "\t" 
                                   << getText("class") << "\t" 
-                                  << getText("department") << std::endl;
-                        
+                                  << getText("department") << "\t"
+                                  << getText("enrollment_time") << std::endl;
                         for (Enrollment* enrollment : enrollments) {
                             std::string studentId = enrollment->getStudentId();
                             Student* student = static_cast<Student*>(userManager.getStudent(studentId));
@@ -2825,7 +2534,8 @@ void CourseSystem::handleTeacherFunctions(int choice) {
                                 std::cout << student->getId() << "\t"
                                           << student->getName() << "\t"
                                           << student->getClassInfo() << "\t"
-                                          << student->getDepartment() << std::endl;
+                                          << student->getDepartment() << "\t"
+                                          << enrollment->getEnrollmentTime() << std::endl;
                             }
                         }
                         std::cout << "--------------------------------" << std::endl;
@@ -2848,6 +2558,7 @@ void CourseSystem::handleTeacherFunctions(int choice) {
 void CourseSystem::handleUserInfoModification() {
     if (!currentUser_) {
         std::cout << getText("operation_failed") << ": " << getText("not_logged_in") << std::endl;
+        Logger::getInstance().error("修改账户信息失败：用户未登录");
         return;
     }
     
@@ -2862,14 +2573,14 @@ void CourseSystem::handleUserInfoModification() {
     
     // 根据用户类型显示不同的信息
     if (userType == UserType::STUDENT) {
-        Student* student = static_cast<Student*>(currentUser_);
+        Student* student = dynamic_cast<Student*>(currentUser_);
         std::cout << getText("gender") << ": " << student->getGender() << std::endl;
         std::cout << getText("age") << ": " << student->getAge() << std::endl;
         std::cout << getText("department") << ": " << student->getDepartment() << std::endl;
         std::cout << getText("class") << ": " << student->getClassInfo() << std::endl;
         std::cout << getText("contact") << ": " << student->getContact() << std::endl;
     } else if (userType == UserType::TEACHER) {
-        Teacher* teacher = static_cast<Teacher*>(currentUser_);
+        Teacher* teacher = dynamic_cast<Teacher*>(currentUser_);
         std::cout << getText("department") << ": " << teacher->getDepartment() << std::endl;
         std::cout << getText("title") << ": " << teacher->getTitle() << std::endl;
         std::cout << getText("contact") << ": " << teacher->getContact() << std::endl;
@@ -2904,14 +2615,24 @@ void CourseSystem::handleUserInfoModification() {
     // 获取用户选择
     int choice = 0;
     std::string input;
-    do {
+    int attempts = 0;
+    const int MAX_ATTEMPTS = 3;
+    
+    while (attempts < MAX_ATTEMPTS) {
         std::cout << "> ";
         std::getline(std::cin, input);
+        attempts++; 
         
-        if (!InputValidator::validateChoice(input, 1, maxOption + 1, choice)) {
+        if (InputValidator::validateChoice(input, 1, maxOption + 1, choice)) {
+            break;
+        } else {
             std::cout << getText("invalid_input") << std::endl;
+            if (attempts >= MAX_ATTEMPTS) {
+                std::cout << getText("too_many_attempts") << std::endl;
+                break;
+            }
         }
-    } while (choice < 1 || choice > maxOption + 1);
+    }
     
     // 返回上级菜单
     if (choice == maxOption + 1) {
@@ -2920,12 +2641,12 @@ void CourseSystem::handleUserInfoModification() {
     
     // 修改信息
     std::string newValue;
-    int newAge = 0;
+    int newAge;
     bool updateSuccess = false;
     
     switch (userType) {
         case UserType::STUDENT: {
-            Student* student = static_cast<Student*>(currentUser_);
+            Student* student = dynamic_cast<Student*>(currentUser_);
             
             switch (choice) {
                 case 1: // 修改名字
@@ -2936,16 +2657,20 @@ void CourseSystem::handleUserInfoModification() {
                     }
                     break;
                 case 2: // 修改性别
-                    std::cout << getText("enter_user_gender") << ": ";
+                    std::cout << getText("enter_user_gender") << " (1-" << getText("male") << " 2-" << getText("female") << "): ";
                     std::getline(std::cin, newValue);
-                    if (!newValue.empty()) {
-                        student->setGender(newValue);
+                    if (newValue == "1") {
+                        student->setGender(getText("male"));
+                    } else if (newValue == "2") {
+                        student->setGender(getText("female"));
+                    } else {
+                        std::cout << getText("invalid_gender") << std::endl;
                     }
                     break;
                 case 3: // 修改年龄
                     std::cout << getText("enter_student_age") << ": ";
                     std::getline(std::cin, newValue);
-                    if (InputValidator::validateInteger(newValue, 0, 120, newAge)) {
+                    if (InputValidator::validateInteger(newValue, 15, 80, newAge)) {
                         student->setAge(newAge);
                     } else {
                         std::cout << getText("invalid_age") << std::endl;
@@ -2980,7 +2705,7 @@ void CourseSystem::handleUserInfoModification() {
             break;
         }
         case UserType::TEACHER: {
-            Teacher* teacher = static_cast<Teacher*>(currentUser_);
+            Teacher* teacher = dynamic_cast<Teacher*>(currentUser_);
             
             switch (choice) {
                 case 1: // 修改名字
@@ -3018,7 +2743,7 @@ void CourseSystem::handleUserInfoModification() {
             break;
         }
         case UserType::ADMIN: {
-            Admin* admin = static_cast<Admin*>(currentUser_);
+            Admin* admin = dynamic_cast<Admin*>(currentUser_);
             
             if (choice == 1) { // 修改名字
                 std::cout << getText("enter_username") << ": ";

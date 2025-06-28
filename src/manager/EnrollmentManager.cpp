@@ -30,10 +30,11 @@
 using json = nlohmann::json;
 
 EnrollmentManager& EnrollmentManager::getInstance() {
-    static EnrollmentManager instance;
+    static EnrollmentManager instance;  // Meyer's单例模式
     return instance;
 }
-
+ 
+ //选课
 bool EnrollmentManager::enrollCourse(const std::string& studentId, const std::string& courseId) {
     // 检查参数
     if (studentId.empty() || courseId.empty()) {
@@ -41,7 +42,8 @@ bool EnrollmentManager::enrollCourse(const std::string& studentId, const std::st
         return false;
     }
     
-    try {
+    try 
+    {
         // 验证学生存在
         UserManager& userManager = UserManager::getInstance();
         Student* student = userManager.getStudent(studentId);
@@ -70,7 +72,7 @@ bool EnrollmentManager::enrollCourse(const std::string& studentId, const std::st
             throw SystemException(ErrorType::COURSE_FULL, "课程已满");
         }
         
-        // 创建选课记录并添加到数据库
+        // 创建选课记录并添加到json文件
         auto enrollment = std::make_unique<Enrollment>(studentId, courseId);
         bool enrollmentAdded = addEnrollment(std::move(enrollment));
         
@@ -82,27 +84,23 @@ bool EnrollmentManager::enrollCourse(const std::string& studentId, const std::st
         // 更新课程的学生列表
         bool studentAdded = course->addStudent(studentId);
         if (!studentAdded) {
-            // 如果学生添加失败，回滚选课记录
-            std::string key = generateKey(studentId, courseId);
-            LockGuard lock(mutex_, 5000);
-            if (lock.isLocked()) {
-                enrollments_.erase(key);
-            }
             Logger::getInstance().error("选课失败：无法将学生添加到课程");
             return false;
         }
         
         // 保存选课数据和课程数据，确保数据同步
-        saveData();
-        courseManager.saveData();
+        saveData(true); // 传入true表示已获取锁
+        courseManager.saveData(true); // 传入true表示已获取锁
         
         // 记录选课信息到日志
         Logger::getInstance().info("选课成功：学生 " + studentId + " 选择课程 " + courseId);
         return true;
+
     } catch (const SystemException& e) {
         // 已处理的系统异常，重新抛出
         throw;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e) {
         Logger::getInstance().error("选课失败：发生异常 - " + std::string(e.what()));
         throw SystemException(ErrorType::OPERATION_FAILED, "选课操作失败：" + std::string(e.what()));
     }
@@ -135,7 +133,7 @@ bool EnrollmentManager::dropCourse(const std::string& studentId, const std::stri
         bool removed = course->removeStudent(studentId);
         if (!removed) {
             Logger::getInstance().warning("退课警告：无法从课程 " + courseId + " 中移除学生 " + studentId);
-            // 继续处理，不返回失败
+            return false;
         }
         
         // 移除选课记录
@@ -146,8 +144,8 @@ bool EnrollmentManager::dropCourse(const std::string& studentId, const std::stri
         }
         
         // 保存选课数据和课程数据，确保数据同步
-        saveData();
-        courseManager.saveData();
+        saveData(true); // 传入true表示已获取锁
+        courseManager.saveData(true); // 传入true表示已获取锁
         
         // 记录退课信息到日志
         Logger::getInstance().info("退课成功：学生 " + studentId + " 退出课程 " + courseId);
@@ -222,7 +220,6 @@ bool EnrollmentManager::isEnrolled(const std::string& studentId, const std::stri
     std::string key = generateKey(studentId, courseId);
     auto it = enrollments_.find(key);
     
-    // 只需检查记录是否存在，不再检查状态
     return it != enrollments_.end();
 }
 
@@ -310,11 +307,14 @@ bool EnrollmentManager::loadData() {
     }
 }
 
-bool EnrollmentManager::saveData() {
+bool EnrollmentManager::saveData(bool alreadyLocked) {
     try {
-        LockGuard lock(mutex_, 5000); // 设置5秒超时
-        if (!lock.isLocked()) {
-            throw SystemException(ErrorType::LOCK_TIMEOUT, "获取选课管理器锁超时");
+        std::unique_ptr<LockGuard> lockPtr;
+        if (!alreadyLocked) {
+            lockPtr = std::make_unique<LockGuard>(mutex_, 5000); // 设置5秒超时
+            if (!lockPtr->isLocked()) {
+                throw SystemException(ErrorType::LOCK_TIMEOUT, "获取选课管理器锁超时");
+            }
         }
         
         json enrollmentsJson = json::array();
@@ -330,17 +330,15 @@ bool EnrollmentManager::saveData() {
             enrollmentsJson.push_back(enrollmentJson);
         }
         
-        std::string jsonStr = enrollmentsJson.dump(4); // 格式化JSON，缩进4个空格
+        std::string jsonStr = enrollmentsJson.dump(4); 
         
         DataManager& dataManager = DataManager::getInstance();
         bool result = dataManager.saveJsonToFile("enrollment.json", jsonStr);
         
         if (result) {
             Logger::getInstance().info("成功保存选课数据，共 " + std::to_string(enrollments_.size()) + " 条记录");
-        } else {
-            Logger::getInstance().error("保存选课数据失败");
-        }
-        
+        } 
+
         return result;
     } catch (const json::exception& e) {
         Logger::getInstance().error("生成选课数据JSON失败：" + std::string(e.what()));

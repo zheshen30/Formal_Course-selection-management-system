@@ -1,15 +1,5 @@
 [
     {
-        "courseId": "666",
-        "enrollmentTime": "2025-06-25 21:26:59",
-        "studentId": "student001"
-    },
-    {
-        "courseId": "program",
-        "enrollmentTime": "2025-06-24 16:52:39",
-        "studentId": "student001"
-    },
-    {
         "courseId": "CS101",
         "enrollmentTime": "2025-06-24 11:57:32",
         "studentId": "student001"

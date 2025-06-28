@@ -11,7 +11,7 @@
   "exit": "退出",
   "change_password": "修改密码",
   "switch_language": "切换语言",
-  "modify_user_info": "修改账户信息",
+  "modify_account_info": "修改账户信息",
 
   "enter_user_id": "请输入用户ID",
   "enter_password": "请输入密码",
@@ -266,5 +266,22 @@
   "available_teachers": "可选的教师列表",
   "teacher_name": "教师姓名",
   "course": "课程",
-  "not_logged_in": "未登录，请先登录"
+  "not_logged_in": "未登录，请先登录",
+  "available_courses": "可选课程列表",
+  "already_selected": "已选",
+  "course_not_found": "课程未找到",
+  "current_language": "当前语言",
+  "login_exception": "登录过程中发生异常",
+  "login_system_error": "登录失败，系统错误",
+  "exiting_system": "退出系统...",
+  "menu_exception": "在主菜单中发生异常",
+  "system_error_retry": "系统错误，请重试",
+  "menu_unknown_exception": "在主菜单中发生未知异常",
+  "unknown_system_error": "系统发生未知错误",
+  "language_switched_chinese": "语言已切换到中文",
+  "language_switched_english": "Language switched to English",
+  "language_switch_failed": "切换语言失败",
+  "gender_male": "男",
+  "gender_female": "女",
+  "email_address": "电子邮箱"
 }

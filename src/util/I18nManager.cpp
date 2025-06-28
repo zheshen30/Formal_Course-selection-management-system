@@ -28,52 +28,36 @@
 #include <sstream>
 #include <iomanip>
 
+namespace fs = std::filesystem;
 using json = nlohmann::json;
 
 I18nManager& I18nManager::getInstance() {
-    static I18nManager instance;
+    static I18nManager instance; // Meyer's单例模式
     return instance;
 }
 
-I18nManager::I18nManager() : currentLanguage_(Language::CHINESE), initialized_(false) {
-}
+I18nManager::I18nManager() : currentLanguage_(Language::CHINESE), initialized_(false) {}
 
 bool I18nManager::initialize(const std::string& dataDir) {
+    // 需要读取数据文件
     LockGuard lock(mutex_);
     
     dataDir_ = dataDir;
-    initialized_ = false;
     
     // 确保数据目录存在
-    DataManager& dataManager = DataManager::getInstance();
-    if (!dataManager.createDirectory(dataDir_)) {
-        Logger::getInstance().error("无法创建或访问语言数据目录: " + dataDir_);
-        return false;
+    if (!fs::exists(dataDir_)) {
+        Logger::getInstance().critical("数据目录不存在: " + dataDir_);
+        throw SystemException(ErrorType::FILE_NOT_FOUND, "数据目录不存在: " + dataDir_);
     }
     
-    // 预加载所有语言文件
-    bool chineseLoaded = loadLanguageFile(Language::CHINESE);
-    bool englishLoaded = loadLanguageFile(Language::ENGLISH);
-    
-    if (!chineseLoaded && !englishLoaded) {
-        Logger::getInstance().error("无法加载任何语言文件");
-        return false;
-    }
-    
-    // 如果当前设置的语言文件加载失败，但另一种语言成功了，则切换到另一种语言
-    if ((currentLanguage_ == Language::CHINESE && !chineseLoaded && englishLoaded) ||
-        (currentLanguage_ == Language::ENGLISH && !englishLoaded && chineseLoaded)) {
-        currentLanguage_ = (chineseLoaded) ? Language::CHINESE : Language::ENGLISH;
-        Logger::getInstance().warning("切换到可用语言: " + languageToString(currentLanguage_));
-    }
-    
-    // 加载默认语言
+    // 加载语言文件到哈希表textMap_
     bool result = loadLanguageFile(currentLanguage_);
     if (result) {
         initialized_ = true;
         Logger::getInstance().info("国际化系统初始化成功，数据目录：" + dataDir);
     } else {
-        Logger::getInstance().error("国际化系统初始化失败");
+        Logger::getInstance().critical("国际化系统初始化失败");
+        throw SystemException(ErrorType::DATA_INVALID, "国际化系统初始化失败");
     }
     
     return initialized_;
@@ -90,8 +74,8 @@ bool I18nManager::setLanguage(Language language) {
         Logger::getInstance().info("语言切换成功：" + languageToString(language));
         return true;
     } else {
-        Logger::getInstance().error("语言切换失败：" + languageToString(language));
-        return false;
+        Logger::getInstance().critical("语言切换失败：" + languageToString(language));
+        throw SystemException(ErrorType::DATA_INVALID, "语言切换失败：" + languageToString(language));
     }
 }
 
@@ -100,58 +84,24 @@ Language I18nManager::getCurrentLanguage() const {
 }
 
 std::string I18nManager::getText(const std::string& key) const {
-    // 提供一些关键键的硬编码默认值，避免返回空值
-    static const std::unordered_map<std::string, std::string> defaultTexts = {
-        {"main_menu_title", "主菜单 / Main Menu"},
-        {"login", "登录 / Login"},
-        {"exit", "退出 / Exit"},
-        {"invalid_input", "无效输入 / Invalid Input"},
-        {"enter_user_id", "请输入用户ID / Please enter user ID"},
-        {"enter_password", "请输入密码 / Please enter password"},
-        {"login_success", "登录成功 / Login successful"},
-        {"login_failed", "登录失败，用户ID或密码错误 / Login failed, incorrect user ID or password"},
-        {"system_error", "系统错误 / System Error"}
-    };
-    
     try {
         // 先检查是否初始化
         if (!initialized_) {
-            Logger::getInstance().warning("I18nManager未初始化，使用默认文本: " + key);
-            
-            // 查找默认文本
-            auto defaultIt = defaultTexts.find(key);
-            if (defaultIt != defaultTexts.end()) {
-                return defaultIt->second;
-            }
-            
-            return key; // 找不到则返回键本身
+            Logger::getInstance().critical("I18nManager未初始化");
+            throw SystemException(ErrorType::DATA_INVALID, "I18nManager未初始化");
         }
-        
-        // 避免使用锁，直接访问textMap_
-        // 这可能在多线程环境下不安全，但在这种情况下优先考虑可用性
+
+        // 不使用锁：读操作安全性高
         auto it = textMap_.find(key);
         if (it != textMap_.end() && !it->second.empty()) {
             return it->second;
         }
         
-        // 如果在textMap_中找不到，查找默认文本
-        auto defaultIt = defaultTexts.find(key);
-        if (defaultIt != defaultTexts.end()) {
-            return defaultIt->second;
-        }
-        
-        // 最后返回键本身
+        // 未找到，返回键本身
         return key;
     }
     catch (const std::exception& e) {
         Logger::getInstance().error("getText发生异常: " + std::string(e.what()));
-        
-        // 即使发生异常，也尝试返回默认文本
-        auto defaultIt = defaultTexts.find(key);
-        if (defaultIt != defaultTexts.end()) {
-            return defaultIt->second;
-        }
-        
         return key;  // 出现任何异常都返回键本身
     }
 }
@@ -161,7 +111,6 @@ std::string I18nManager::getFormattedText(const std::string& key, Args... args) 
     std::string text = getText(key);
     try {
         // 简单的字符串替换实现，替换{0}, {1}, {2}等占位符
-        // 注意：这是一个简化版本，不支持fmt的所有功能
         return formatString(text, args...);
     } catch (const std::exception& e) {
         Logger::getInstance().error("格式化文本失败：" + std::string(e.what()) + " - 键：" + key);
@@ -169,7 +118,12 @@ std::string I18nManager::getFormattedText(const std::string& key, Args... args) 
     }
 }
 
-// 简单的字符串格式化函数，用于替换fmt::format
+// 递归终止条件
+std::string I18nManager::formatString(const std::string& format) const {
+    return format;
+}
+
+// 格式化值为字符串
 template<typename T>
 std::string I18nManager::formatValue(const T& value) const {
     std::ostringstream oss;
@@ -183,26 +137,13 @@ std::string I18nManager::formatValue(const std::string& value) const {
     return value;
 }
 
-// 特化const char*类型
-template<>
-std::string I18nManager::formatValue(const char* const& value) const {
-    return std::string(value);
-}
-
-// 递归终止条件
-std::string I18nManager::formatString(const std::string& format) const {
-    return format;
-}
-
 // 递归格式化函数
 template<typename T, typename... Args>
 std::string I18nManager::formatString(const std::string& format, T value, Args... args) const {
-    std::string result = format;
-    // 修正占位符索引，使用参数的总数减去剩余参数数量
-    // 例如：对于formatString("text", val1, val2, val3)，第一个参数val1应该替换{0}
-    std::string placeholder = "{0}";
     
-    // 查找并替换占位符
+    //　递归终止条件，可变参数包为空
+    std::string result = format;
+    std::string placeholder = "{0}";
     size_t pos = result.find(placeholder);
     if (pos != std::string::npos) {
         result.replace(pos, placeholder.length(), formatValue(value));
@@ -249,104 +190,38 @@ Language I18nManager::stringToLanguage(const std::string& languageStr) {
     }
 }
 
-bool I18nManager::createDefaultLanguageFile(Language language) {
-    Logger::getInstance().info("创建默认语言文件: " + languageToString(language));
-    
-    nlohmann::json defaultTexts;
-    defaultTexts["main_menu_title"] = (language == Language::CHINESE) ? "主菜单" : "Main Menu";
-    defaultTexts["admin_menu_title"] = (language == Language::CHINESE) ? "管理员菜单" : "Administrator Menu";
-    defaultTexts["teacher_menu_title"] = (language == Language::CHINESE) ? "教师菜单" : "Teacher Menu";
-    defaultTexts["student_menu_title"] = (language == Language::CHINESE) ? "学生菜单" : "Student Menu";
-    
-    defaultTexts["login"] = (language == Language::CHINESE) ? "登录" : "Login";
-    defaultTexts["logout"] = (language == Language::CHINESE) ? "注销" : "Logout";
-    defaultTexts["exit"] = (language == Language::CHINESE) ? "退出" : "Exit";
-    
-    defaultTexts["enter_user_id"] = (language == Language::CHINESE) ? "请输入用户ID" : "Please enter user ID";
-    defaultTexts["enter_password"] = (language == Language::CHINESE) ? "请输入密码" : "Please enter password";
-    defaultTexts["login_success"] = (language == Language::CHINESE) ? "登录成功" : "Login successful";
-    defaultTexts["login_failed"] = (language == Language::CHINESE) ? "登录失败，用户ID或密码错误" : "Login failed, incorrect user ID or password";
-    
-    defaultTexts["invalid_input"] = (language == Language::CHINESE) ? "输入无效，请重新输入" : "Invalid input, please try again";
-    
-    defaultTexts["system_error"] = (language == Language::CHINESE) ? "系统错误" : "System Error";
-    defaultTexts["save_success"] = (language == Language::CHINESE) ? "保存成功" : "Save Successful";
-    defaultTexts["save_failed"] = (language == Language::CHINESE) ? "保存失败" : "Save Failed";
-    
-    std::string jsonData = defaultTexts.dump(4); // 格式化保存，缩进4个空格
-    std::string filePath = getLanguageFilePath(language);
-    
-    try {
-        // 直接使用文件流写入文件
-        std::ofstream file(filePath);
-        if (!file.is_open()) {
-            Logger::getInstance().error("无法创建语言文件: " + filePath);
-            return false;
-        }
-        
-        file << jsonData;
-        file.close();
-        
-        if (!std::filesystem::exists(filePath)) {
-            Logger::getInstance().error("创建语言文件后文件不存在: " + filePath);
-            return false;
-        }
-        
-        Logger::getInstance().info("成功创建默认语言文件: " + filePath);
-        return true;
-    } catch (const std::exception& e) {
-        Logger::getInstance().error("创建默认语言文件时发生异常: " + std::string(e.what()));
-        return false;
-    } catch (...) {
-        Logger::getInstance().error("创建默认语言文件时发生未知异常");
-        return false;
-    }
-}
-
 bool I18nManager::loadLanguageFile(Language language) {
     try {
         std::string filePath = getLanguageFilePath(language);
         Logger::getInstance().debug("尝试加载语言文件: " + filePath);
         
         // 检查文件是否存在
-        bool fileExists = std::filesystem::exists(filePath);
+        bool fileExists = fs::exists(filePath);
         if (!fileExists) {
-            Logger::getInstance().warning("语言文件不存在: " + filePath);
-            Logger::getInstance().info("尝试创建默认语言文件...");
-            
-            if (!createDefaultLanguageFile(language)) {
-                Logger::getInstance().error("创建默认语言文件失败");
-                return false;
-            }
-            
-            // 重新检查文件是否存在
-            fileExists = std::filesystem::exists(filePath);
-            if (!fileExists) {
-                Logger::getInstance().error("创建后文件仍不存在");
-                return false;
-            }
+            Logger::getInstance().critical("语言文件不存在: " + filePath);
+            throw SystemException(ErrorType::FILE_NOT_FOUND, "语言数据文件不存在: " + filePath);
         }
         
         // 读取文件内容
         std::ifstream file(filePath);
         if (!file.is_open()) {
-            Logger::getInstance().error("无法打开语言文件: " + filePath);
-            return false;
+            Logger::getInstance().critical("无法打开语言文件: " + filePath);
+            throw SystemException(ErrorType::FILE_ACCESS_DENIED, "语言数据文件无法打开: " + filePath);
         }
         
         std::string jsonStr((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         file.close();
         
         if (jsonStr.empty()) {
-            Logger::getInstance().error("语言文件为空: " + filePath);
-            return false;
+            Logger::getInstance().critical("语言文件为空: " + filePath);
+            throw SystemException(ErrorType::DATA_INVALID, "语言数据文件为空: " + filePath);
         }
         
         Logger::getInstance().debug("语言文件内容大小: " + std::to_string(jsonStr.size()) + " 字节");
         
         // 解析JSON
         try {
-            json langJson = json::parse(jsonStr);
+            json langJson = json::parse(jsonStr); // JSON字符串转换为JSON对象
             
             // 创建一个临时映射表
             std::unordered_map<std::string, std::string> tempMap;
@@ -359,7 +234,7 @@ bool I18nManager::loadLanguageFile(Language language) {
                 if (it.value().is_string()) {
                     value = it.value().get<std::string>();
                 } else {
-                    value = it.value().dump();
+                    value = it.value().dump(); //将非字符串类型转换为字符串
                 }
                 
                 tempMap[key] = value;
@@ -367,8 +242,8 @@ bool I18nManager::loadLanguageFile(Language language) {
             
             // 检查是否加载了任何键值对
             if (tempMap.empty()) {
-                Logger::getInstance().warning("语言文件没有包含任何键值对");
-                return false;
+                Logger::getInstance().critical("语言文件没有包含任何键值对");
+                throw SystemException(ErrorType::DATA_INVALID, "语言数据文件没有包含任何键值对: " + filePath);
             }
             
             // 全部处理完成后，替换现有的映射表
@@ -377,55 +252,17 @@ bool I18nManager::loadLanguageFile(Language language) {
             Logger::getInstance().info("成功加载语言文件: " + filePath + "，共 " + std::to_string(textMap_.size()) + " 个文本项");
             return true;
         } catch (const json::exception& e) {
-            Logger::getInstance().error("解析语言文件JSON失败: " + std::string(e.what()));
-            
-            // 尝试创建新的默认文件
-            Logger::getInstance().info("尝试创建新的默认语言文件...");
-            if (createDefaultLanguageFile(language)) {
-                // 再次尝试加载，但避免无限递归
-                Logger::getInstance().info("重新尝试加载默认语言文件...");
-                
-                // 直接读取新创建的文件
-                std::ifstream newFile(filePath);
-                if (!newFile.is_open()) {
-                    Logger::getInstance().error("无法打开新创建的语言文件");
-                    return false;
-                }
-                
-                std::string newJsonStr((std::istreambuf_iterator<char>(newFile)), std::istreambuf_iterator<char>());
-                newFile.close();
-                
-                try {
-                    json newLangJson = json::parse(newJsonStr);
-                    std::unordered_map<std::string, std::string> newTempMap;
-                    
-                    for (auto it = newLangJson.begin(); it != newLangJson.end(); ++it) {
-                        std::string key = it.key();
-                        std::string value = it.value().is_string() ? it.value().get<std::string>() : it.value().dump();
-                        newTempMap[key] = value;
-                    }
-                    
-                    textMap_ = std::move(newTempMap);
-                    Logger::getInstance().info("成功加载默认语言文件，共 " + std::to_string(textMap_.size()) + " 个文本项");
-                    return true;
-                } catch (...) {
-                    Logger::getInstance().error("解析新创建的默认语言文件失败");
-                    return false;
-                }
-            }
-            
-            return false;
+            Logger::getInstance().critical("解析语言文件JSON失败: " + std::string(e.what()));
+            throw SystemException(ErrorType::DATA_INVALID, "语言数据文件解析失败: " + filePath);
         }
-    } catch (const std::exception& e) {
-        Logger::getInstance().error("加载语言文件时发生异常: " + std::string(e.what()));
-        return false;
     } catch (...) {
         Logger::getInstance().error("加载语言文件时发生未知异常");
-        return false;
+        throw SystemException(ErrorType::UNKNOWN_ERROR, "加载语言文件时发生未知异常");
     }
 }
 
 std::string I18nManager::getLanguageFilePath(Language language) const {
+    
     std::string filename;
     
     switch (language) {
@@ -455,36 +292,12 @@ std::string I18nManager::getLanguageFilePath(Language language) const {
     return fullPath;
 }
 
-// 显式实例化常见的模板实例，以避免链接错误
+// 显式实例化常见的模板实例
 template std::string I18nManager::getFormattedText(const std::string& key, int) const;
-template std::string I18nManager::getFormattedText(const std::string& key, double) const;
-template std::string I18nManager::getFormattedText(const std::string& key, const std::string&) const;
 template std::string I18nManager::getFormattedText(const std::string& key, std::string) const;
-template std::string I18nManager::getFormattedText(const std::string& key, const char*) const;
-template std::string I18nManager::getFormattedText(const std::string& key, int, int) const;
-template std::string I18nManager::getFormattedText(const std::string& key, const std::string&, const std::string&) const;
-template std::string I18nManager::getFormattedText(const std::string& key, std::string, std::string) const;
-template std::string I18nManager::getFormattedText(const std::string& key, const std::string&, int) const;
-template std::string I18nManager::getFormattedText(const std::string& key, int, const std::string&) const;
-template std::string I18nManager::getFormattedText(const std::string& key, const char*, const char*) const;
 
-// 格式化函数的模板实例化
 template std::string I18nManager::formatValue(const int&) const;
-template std::string I18nManager::formatValue(const double&) const;
-template std::string I18nManager::formatValue(const float&) const;
-template std::string I18nManager::formatValue(const long&) const;
-template std::string I18nManager::formatValue(const unsigned int&) const;
-template std::string I18nManager::formatValue(const unsigned long&) const;
+template std::string I18nManager::formatValue(const std::string&) const;
 
-// 格式化字符串的模板实例化
 template std::string I18nManager::formatString(const std::string&, int) const;
-template std::string I18nManager::formatString(const std::string&, double) const;
-template std::string I18nManager::formatString(const std::string&, const std::string&) const;
 template std::string I18nManager::formatString(const std::string&, std::string) const;
-template std::string I18nManager::formatString(const std::string&, const char*) const;
-template std::string I18nManager::formatString(const std::string&, int, int) const;
-template std::string I18nManager::formatString(const std::string&, const std::string&, const std::string&) const;
-template std::string I18nManager::formatString(const std::string&, std::string, std::string) const;
-template std::string I18nManager::formatString(const std::string&, const std::string&, int) const;
-template std::string I18nManager::formatString(const std::string&, int, const std::string&) const;
-template std::string I18nManager::formatString(const std::string&, const char*, const char*) const;

@@ -29,7 +29,7 @@
 #include <random>
 #include <algorithm>
 #include <utility>
-#include <functional> // 用于std::hash
+#include <functional> 
 #include <iostream>
 
 // User 类实现
@@ -66,9 +66,10 @@ User& User::operator=(User&& other) noexcept {
 }
 
 bool User::verifyPassword(const std::string& password) const {
-    // 方法1：纯哈希值比较（针对特殊账户且盐值为空）
-    if (salt_.empty()) {
-        if (id_ == "admin001" || id_ == "teacher001" || id_ == "student001") {
+    // 方法1：针对特殊账户的验证逻辑
+    if (id_ == "admin001" || id_ == "teacher001" || id_ == "student001") {
+        // 如果是特殊账户且盐值为空（未修改过密码），使用纯哈希值比较
+        if (salt_.empty()) {
             Logger::getInstance().debug("特殊账户处理：使用纯哈希验证（无盐值）");
             // 计算纯哈希值并与存储的哈希值比较
             std::string pureHash = generatePasswordHash(password, "");
@@ -78,6 +79,8 @@ bool User::verifyPassword(const std::string& password) const {
             Logger::getInstance().debug("纯哈希匹配: " + std::string(directMatch ? "是" : "否"));
             return directMatch;
         }
+        // 如果特殊账户已修改过密码（有盐值），使用标准方法验证
+        Logger::getInstance().debug("特殊账户处理：已修改过密码，使用盐值验证");
     }
     
     // 方法2：密码和盐值拼接后哈希（标准方法）
@@ -89,7 +92,7 @@ bool User::verifyPassword(const std::string& password) const {
     Logger::getInstance().debug("存储的哈希: " + password_);
     
     // 判断是否匹配
-    bool combinedMatch = password_ == combinedHash;
+    bool combinedMatch = (password_ == combinedHash);
     
     Logger::getInstance().debug("哈希匹配: " + std::string(combinedMatch ? "是" : "否"));
     
@@ -97,15 +100,8 @@ bool User::verifyPassword(const std::string& password) const {
 }
 
 void User::setPassword(std::string password) {
-    // 为特殊账户设置一个标志，表示密码已被修改
-    // 这样在verifyPassword中将不再使用特殊逻辑
-    if (id_ == "admin001" || id_ == "teacher001" || id_ == "student001") {
-        // 特殊账户修改密码时，将盐值设置为非空，这样就不会触发特殊逻辑了
-        salt_ = generateSalt();
-    } else {
-        salt_ = generateSalt();
-    }
-    
+    // 保存逻辑在UserManager中，符合单一职责原则
+    salt_ = generateSalt();
     password_ = generatePasswordHash(password, salt_);
 }
 

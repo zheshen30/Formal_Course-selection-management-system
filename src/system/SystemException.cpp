@@ -16,10 +16,9 @@
  */
 #include "../../include/system/SystemException.h"
 
-SystemException::SystemException(ErrorType type, const std::string& message, int errorCode)
-    : std::runtime_error(message),
-      type_(type),
-      errorCode_(errorCode) {
+SystemException::SystemException(ErrorType type, const std::string& message)
+    : std::runtime_error(message), // 调用基类构造函数，传入错误消息
+      type_(type) {
 }
 
 std::string SystemException::getTypeString() const {
@@ -27,7 +26,7 @@ std::string SystemException::getTypeString() const {
 }
 
 std::string SystemException::getFormattedMessage() const {
-    return "[" + getTypeString() + "] " + std::string(what()) + " (代码: " + std::to_string(errorCode_) + ")";
+    return "[" + getTypeString() + "] " + std::string(what()); 
 }
 
 std::string SystemException::errorTypeToString(ErrorType type) {

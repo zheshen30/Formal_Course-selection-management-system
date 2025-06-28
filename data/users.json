@@ -1,10 +1,13 @@
 [
     {
-        "id": "admin001",
-        "name": "管理员",
-        "password": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+        "contact": "teacher001@university.edu",
+        "department": "计算机科学与技术",
+        "id": "teacher001",
+        "name": "张教授",
+        "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
         "salt": "",
-        "type": "ADMIN"
+        "title": "教授",
+        "type": "TEACHER"
     },
     {
         "age": 20,
@@ -19,69 +22,10 @@
         "type": "STUDENT"
     },
     {
-        "contact": "teacher001@university.edu",
-        "department": "计算机科学与技术",
-        "id": "teacher001",
-        "name": "张教授",
-        "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+        "id": "admin001",
+        "name": "管理员",
+        "password": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
         "salt": "",
-        "title": "教授",
-        "type": "TEACHER"
-    },
-    {
-        "contact": "mail",
-        "department": "computer science",
-        "id": "teacher002",
-        "name": "teacher",
-        "password": "f662b8f9deb10cb203c1749dc1f721b64eec45ac128e4912d14b0255fb36ebf6",
-        "salt": "a7a4YN3FBcWD0TAM",
-        "title": "prof",
-        "type": "TEACHER"
-    },
-    {
-        "contact": "mail",
-        "department": "computer",
-        "id": "tt",
-        "name": "tt",
-        "password": "7e9fc9be208a7c5eaa0c415d5ce7effabb5d888acd42989441579a2ac56758a6",
-        "salt": "22X9K5XtH01OuPlh",
-        "title": "professor",
-        "type": "TEACHER"
-    },
-    {
-        "age": 19,
-        "classInfo": "2401",
-        "contact": "mail",
-        "department": "computer",
-        "gender": "Male",
-        "id": "zheshen",
-        "name": "zheshen",
-        "password": "66aff5985e09657a61b6bafac90694bdb5ebec65a806e01fab9cf55dfbd1980f",
-        "salt": "yuYTWmRoAdutG08q",
-        "type": "STUDENT"
-    },
-    {
-        "age": 18,
-        "classInfo": "sd",
-        "contact": "sd",
-        "department": "cs",
-        "gender": "male",
-        "id": "zheshen001",
-        "name": "zheshen",
-        "password": "103c9fc63effc3a821a83844aed1be5a3d7880c90a1750918b3df17b1ade80b6",
-        "salt": "eqfbm85PPJEP3GR2",
-        "type": "STUDENT"
-    },
-    {
-        "age": 18,
-        "classInfo": "2401",
-        "contact": "mail",
-        "department": "computer",
-        "gender": "malw",
-        "id": "zz",
-        "name": "zz",
-        "password": "e571ee99db10d1af8350bd0395d5a2d731e45aea848d2c3d431c9c52529a4ba4",
-        "salt": "mKmUuPDCH6R6A6SK",
-        "type": "STUDENT"
+        "type": "ADMIN"
     }
 ]

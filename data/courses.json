@@ -1,38 +1,14 @@
 [
     {
-        "credit": 1.0,
-        "enrolledStudents": [],
-        "hours": 2,
-        "id": "course001",
-        "maxCapacity": 50,
-        "name": "cop",
-        "semester": "222",
-        "teacherId": "teacher002",
-        "type": "ELECTIVE"
-    },
-    {
         "credit": 3.5,
         "enrolledStudents": [],
         "hours": 56,
         "id": "CS201",
         "maxCapacity": 30,
         "name": "面向对象程序设计",
-        "semester": "2023-2024-1",
+        "semester": "2024-2025-1",
         "teacherId": "teacher001",
         "type": "ELECTIVE"
-    },
-    {
-        "credit": 3.0,
-        "enrolledStudents": [
-            "student001"
-        ],
-        "hours": 12,
-        "id": "program",
-        "maxCapacity": 1,
-        "name": "程序",
-        "semester": "2345",
-        "teacherId": "teacher001",
-        "type": "REQUIRED"
     },
     {
         "credit": 4.0,
@@ -41,7 +17,7 @@
         "id": "CS102",
         "maxCapacity": 40,
         "name": "数据结构",
-        "semester": "2023-2024-1",
+        "semester": "2024-2025-1",
         "teacherId": "teacher001",
         "type": "REQUIRED"
     },
@@ -54,32 +30,8 @@
         "id": "CS101",
         "maxCapacity": 50,
         "name": "计算机导论",
-        "semester": "2023-2024-1",
+        "semester": "2024-2025-1",
         "teacherId": "teacher001",
         "type": "REQUIRED"
-    },
-    {
-        "credit": 2.0,
-        "enrolledStudents": [],
-        "hours": 60,
-        "id": "computer",
-        "maxCapacity": 100,
-        "name": "jj",
-        "semester": "2024",
-        "teacherId": "teacher001",
-        "type": "ELECTIVE"
-    },
-    {
-        "credit": 2.0,
-        "enrolledStudents": [
-            "student001"
-        ],
-        "hours": 2,
-        "id": "666",
-        "maxCapacity": 34,
-        "name": "heihei",
-        "semester": "23",
-        "teacherId": "tt",
-        "type": "ELECTIVE"
     }
 ]
