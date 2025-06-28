@@ -2,11 +2,11 @@
 
 ## 项目概述
 
-大学选课系统是一个面向高校学生、教师和管理员的综合性教务管理平台，主要功能包括用户管理、课程管理、选课管理、数据持久化、多语言支持等。系统采用面向对象设计方法，使用C++语言实现，支持跨平台运行。
+大学选课系统是一个面向高校学生、教师和管理员的综合性教务管理平台，主要功能包括用户管理、课程管理、选课管理、数据持久化、多语言支持等。系统采用面向对象设计方法，使用C++语言实现。
 
 ## 主要特性
 
-- **多角色支持**：管理员、教师、学生三种角色，权限分离
+- **多角色支持**：管理员、教师、学生三种角色
 - **完整选课流程**：课程查询、选课、退课等功能
 - **数据持久化**：使用JSON格式存储数据
 - **国际化支持**：支持中英文界面
@@ -40,7 +40,6 @@
 - CMake 3.16或更高版本
 - 以下依赖库：
   - **OpenSSL**（必须安装，用于加密）
-  - GoogleTest （单元测试框架）（需要运行测试用例时安装）（选装）
   - nlohmann/json（已包含在源码中）(使用单头文件的json解析库，通过预编译头文件减少编译时间)
 
 
@@ -58,18 +57,11 @@ sudo yum install openssl-devel
 
 **macOS和Windows下的OpenSSL的安装方法请自行搜索**
 
-## 安装GoogleTest（选装）
-
- **运行测试用例时，必装**
-
- 安装方法请自行搜索，推荐使用github上的源码进行安装
- https://github.com/google/googletest.git
-
 ## 构建与运行
 
-### 直接构建
+### 直接构建（以rocky Linux平台为例）
 
-1. 确保已正确安装OpenSSL库
+1. 确保已正确安装OpenSSL库（需安装在系统标准位置或配置环境变量，否则找不到OpenSSL）
 
 2. 克隆代码库或通过压缩包获得完整源码
 
@@ -84,9 +76,6 @@ sudo yum install openssl-devel
    cmake ..
    make
    ```
-
-   > 如果OpenSSL安装在非标准位置，可以使用：`cmake -DOPENSSL_ROOT_DIR=/path/to/openssl ..`
-   > 如果要进行单元测试和集成测试，需要在cmake后加 `-DCMAKE_BUILD_TYPE=Debug`选项 **先确保正确安装了GoogleTest**
 
 4. 运行程序(build目录下./course_system)
 
@@ -123,10 +112,7 @@ sudo yum install openssl-devel
 
 ## 文档（docs目录下）
 
-- [系统架构system_arch](docs/system_arch.md)：详细设计文档
-- [需求分析require](docs/require.md)：系统需求分析
-- [API文档api](docs/api.md)：API接口文档
-- [类视图view_class](docs/view_class.md)：类图和关系
+- [系统架构system_arch](docs/system_arch.md)：系统架构文档
 - [使用规范user_regulation](docs/user_regulation.md)：使用规范文档
 
 ## 开发者
