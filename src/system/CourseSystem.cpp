@@ -2165,7 +2165,7 @@ void CourseSystem::handleStudentFunctions(int choice) {
                 std::cout << "--------------------------------" << std::endl;
                 
                 // 获取课程ID
-                std::cout << getText("query_by_course_id") << ": ";
+                std::cout << getText("select_by_course_id") << ": ";
                 std::string courseId;
                 std::getline(std::cin, courseId);
                 
@@ -2655,6 +2655,10 @@ void CourseSystem::handleUserInfoModification() {
                     if (!newValue.empty()) {
                         student->setName(newValue);
                     }
+                    else{
+                        std::cout << getText("invalid_input") << std::endl;
+                        return;
+                    }
                     break;
                 case 2: // 修改性别
                     std::cout << getText("enter_user_gender") << " (1-" << getText("male") << " 2-" << getText("female") << "): ";
@@ -2665,6 +2669,7 @@ void CourseSystem::handleUserInfoModification() {
                         student->setGender(getText("female"));
                     } else {
                         std::cout << getText("invalid_gender") << std::endl;
+                        return;
                     }
                     break;
                 case 3: // 修改年龄
@@ -2683,6 +2688,10 @@ void CourseSystem::handleUserInfoModification() {
                     if (!newValue.empty()) {
                         student->setDepartment(newValue);
                     }
+                    else{
+                        std::cout << getText("invalid_input") << std::endl;
+                        return;
+                    }
                     break;
                 case 5: // 修改班级信息
                     std::cout << getText("enter_class_info") << ": ";
@@ -2690,12 +2699,20 @@ void CourseSystem::handleUserInfoModification() {
                     if (!newValue.empty()) {
                         student->setClassInfo(newValue);
                     }
+                    else{
+                        std::cout << getText("invalid_input") << std::endl;
+                        return;
+                    }
                     break;
                 case 6: // 修改联系方式
                     std::cout << getText("enter_email") << ": ";
                     std::getline(std::cin, newValue);
                     if (!newValue.empty()) {
                         student->setContact(newValue);
+                    }
+                    else{
+                        std::cout << getText("invalid_input") << std::endl;
+                        return;
                     }
                     break;
             }
@@ -2714,12 +2731,20 @@ void CourseSystem::handleUserInfoModification() {
                     if (!newValue.empty()) {
                         teacher->setName(newValue);
                     }
+                    else{
+                        std::cout << getText("invalid_input") << std::endl;
+                        return;
+                    }
                     break;
                 case 2: // 修改系别
                     std::cout << getText("enter_teacher_department") << ": ";
                     std::getline(std::cin, newValue);
                     if (!newValue.empty()) {
                         teacher->setDepartment(newValue);
+                    }
+                    else{
+                        std::cout << getText("invalid_input") << std::endl;
+                        return;
                     }
                     break;
                 case 3: // 修改职称
@@ -2728,12 +2753,20 @@ void CourseSystem::handleUserInfoModification() {
                     if (!newValue.empty()) {
                         teacher->setTitle(newValue);
                     }
+                    else{
+                        std::cout << getText("invalid_input") << std::endl;
+                        return;
+                    }
                     break;
                 case 4: // 修改联系方式
                     std::cout << getText("enter_email") << ": ";
                     std::getline(std::cin, newValue);
                     if (!newValue.empty()) {
                         teacher->setContact(newValue);
+                    }
+                    else{
+                        std::cout << getText("invalid_input") << std::endl;
+                        return;
                     }
                     break;
             }
@@ -2750,6 +2783,10 @@ void CourseSystem::handleUserInfoModification() {
                 std::getline(std::cin, newValue);
                 if (!newValue.empty()) {
                     admin->setName(newValue);
+                }
+                else{
+                    std::cout << getText("invalid_input") << std::endl;
+                    return;
                 }
                 
                 // 更新用户信息

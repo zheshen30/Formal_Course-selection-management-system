@@ -166,7 +166,8 @@
   "no_admins": "系统中没有其他管理员",
   "admin_list": "管理员列表",
   "role": "角色",
-  
+  "contact": "联系方式",
+
   "press_enter": "按回车键继续",
   
   "enter_course_id": "请输入课程ID",
@@ -279,9 +280,11 @@
   "menu_unknown_exception": "在主菜单中发生未知异常",
   "unknown_system_error": "系统发生未知错误",
   "language_switched_chinese": "语言已切换到中文",
-  "language_switched_english": "Language switched to English",
+  "language_switched_english": "语言已切换到英文",
   "language_switch_failed": "切换语言失败",
   "gender_male": "男",
   "gender_female": "女",
-  "email_address": "电子邮箱"
+  "email_address": "电子邮箱",
+  "modify_user_info": "修改用户信息",
+  "select_by_course_id":"按课程ID选择"
 }

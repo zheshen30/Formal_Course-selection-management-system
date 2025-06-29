@@ -166,6 +166,7 @@
   "no_admins": "There are no other administrators in the system",
   "admin_list": "Administrator list",
   "role": "Role",
+  "contact": "Contact",
   
   "press_enter": "Press Enter to continue",
   
@@ -269,7 +270,6 @@
   "teacher_name": "Teacher Name",
   "course": "Course",
   "not_logged_in": "Not logged in",
-  
   "login_exception": "Login exception occurred",
   "login_system_error": "Login failed, system error",
   "exiting_system": "Exiting system...",
@@ -284,5 +284,7 @@
   "already_selected": "Selected",
   "gender_male": "Male",
   "gender_female": "Female",
-  "email_address": "Email Address"
+  "email_address": "Email Address",
+  "modify_user_info": "Modify User Information",
+  "select_by_course_id": "Select by Course ID"
 }
